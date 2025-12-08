@@ -1,5 +1,3 @@
-
-
 import numpy as np
 
 
@@ -13,7 +11,8 @@ class Cross2D:
         """Return 1 inside the cross arms and 0 elsewhere.
 
         Args:
-            x (np.ndarray): Array of shape (2, n) with points in the unit square.
+            x (np.ndarray): Array of shape (2, n) with points
+                in the unit square.
         """
         values = np.zeros(x.shape[1])
         cross_width = self.width
