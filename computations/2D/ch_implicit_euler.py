@@ -16,22 +16,19 @@ from ufl import TestFunction, dx, grad, inner, split, Measure
 
 import matplotlib.pyplot as plt
 
-import chb
 
-from ch_timedisc import Parameters
-
-print(dolfinx.__version__)
+import ch_timedisc as ch
 
 
 # Define material parameters
-parameters = Parameters()
+parameters = ch.Parameters()
 gamma = parameters.gamma
 ell = parameters.ell
 mobility = parameters.mobility
 dt = parameters.dt
 
 # Double well
-doublewell = chb.energies.DoubleWellPotential()
+doublewell = ch.DoubleWell()
 
 # Mesh
 msh = mesh.create_unit_square(
@@ -59,7 +56,7 @@ pf_old, mu_old = split(xi_old)
 
 
 # Initial condtions
-initialcondition = chb.initialconditions.Cross(width=0.3)
+initialcondition = ch.Cross2D(width=0.3)
 xi.sub(0).interpolate(initialcondition)
 # Initialize chemical potential to zero
 xi.sub(1).interpolate(lambda x: 0.0 * x[0])
@@ -93,7 +90,7 @@ opts = ksp.getOptionsPrefix()
 ksp.setFromOptions()
 
 # Pyvista plot
-viz = chb.visualization.PyvistaVizualization(V.sub(0), xi.sub(0), 0.0)
+viz = ch.visualization.PyvistaVizualization(V.sub(0), xi.sub(0), 0.0)
 
 # Output file
 # output_file_pf = XDMFFile(MPI.COMM_WORLD, "../output/ch_implicit.xdmf", "w")

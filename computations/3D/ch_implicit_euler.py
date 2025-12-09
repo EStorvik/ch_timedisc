@@ -16,8 +16,8 @@ from ufl import TestFunction, dx, grad, inner, split, Measure
 
 import matplotlib.pyplot as plt
 
-import ch_timedisc as ch
 
+import ch_timedisc as ch
 
 
 # Define material parameters
@@ -31,9 +31,8 @@ dt = parameters.dt
 doublewell = ch.DoubleWell()
 
 # Mesh
-msh = mesh.create_unit_square(
-    MPI.COMM_WORLD, parameters.nx, parameters.ny, cell_type=mesh.CellType.triangle
-)
+msh = mesh.create_unit_cube(
+    MPI.COMM_WORLD, parameters.nx, parameters.ny, parameters.nz)
 
 # Finite elements
 P1 = element("Lagrange", msh.basix_cell(), 1)
@@ -56,7 +55,7 @@ pf_old, mu_old = split(xi_old)
 
 
 # Initial condtions
-initialcondition = ch.Cross2D(width=0.3)
+initialcondition = ch.Cross3D(width=0.2)
 xi.sub(0).interpolate(initialcondition)
 # Initialize chemical potential to zero
 xi.sub(1).interpolate(lambda x: 0.0 * x[0])
@@ -73,7 +72,7 @@ F_pf = (
 F_mu = (
     inner(mu, eta_mu) * dx
     - gamma * ell * inner(grad(pf), grad(eta_mu)) * dx
-    - gamma / ell * (doublewell.cprime(pf) - doublewell.eprime(pf_old)) * eta_mu * dx
+    - gamma / ell * doublewell.prime(pf) * eta_mu * dx
 )
 F = F_pf + F_mu
 
@@ -90,11 +89,13 @@ opts = ksp.getOptionsPrefix()
 ksp.setFromOptions()
 
 # Pyvista plot
-viz = ch.visualization.PyvistaVizualization(V.sub(0), xi.sub(0), 0.0)
+viz = ch.visualization.PyvistaVizualization3D(
+    V.sub(0), xi.sub(0), 0.0, mode="slices"
+)
 
 # Output file
-# output_file_pf = XDMFFile(MPI.COMM_WORLD, "../output/ch_implicit.xdmf", "w")
-# output_file_pf.write_mesh(msh)
+output_file_pf = XDMFFile(MPI.COMM_WORLD, "../output/ch_implicit_3D.xdmf", "w")
+output_file_pf.write_mesh(msh)
 
 
 # Energy
@@ -134,9 +135,9 @@ for i in range(parameters.num_time_steps):
 
     print(f"The energy at time step {i} is {energy_int}.")
 
-    # # Output
-    # pf_out, _ = xi_n.split()
-    # output_file_pf.write_function(pf_out, t)
+    # Output
+    pf_out, _ = xi.split()
+    output_file_pf.write_function(pf_out, t)
 
 
 viz.final_plot(xi.sub(0))

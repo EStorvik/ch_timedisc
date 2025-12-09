@@ -46,27 +46,51 @@ class Cross3D:
         values = np.zeros(x.shape[1])
         cross_width = self.width
 
-        bar_x = np.logical_and.reduce(
-            [
-                np.abs(x[0] - 0.5) <= cross_width / 2,
-                np.abs(x[1] - 0.5) <= cross_width,
-                np.abs(x[2] - 0.5) <= cross_width,
-            ]
-        )
-        bar_y = np.logical_and.reduce(
-            [
-                np.abs(x[1] - 0.5) <= cross_width / 2,
-                np.abs(x[0] - 0.5) <= cross_width,
-                np.abs(x[2] - 0.5) <= cross_width,
-            ]
-        )
-        bar_z = np.logical_and.reduce(
-            [
-                np.abs(x[2] - 0.5) <= cross_width / 2,
-                np.abs(x[0] - 0.5) <= cross_width,
-                np.abs(x[1] - 0.5) <= cross_width,
-            ]
-        )
+        # X-axis spike: extends in +/- x direction, square cross-section
+        spike_x_pos = np.logical_and.reduce([
+            x[0] >= 0.5,
+            x[0] <= 0.5 + cross_width,
+            np.abs(x[1] - 0.5) <= cross_width / 2,
+            np.abs(x[2] - 0.5) <= cross_width / 2
+        ])
+        spike_x_neg = np.logical_and.reduce([
+            x[0] <= 0.5,
+            x[0] >= 0.5 - cross_width,
+            np.abs(x[1] - 0.5) <= cross_width / 2,
+            np.abs(x[2] - 0.5) <= cross_width / 2
+        ])
+        
+        # Y-axis spike: extends in +/- y direction, square cross-section
+        spike_y_pos = np.logical_and.reduce([
+            x[1] >= 0.5,
+            x[1] <= 0.5 + cross_width,
+            np.abs(x[0] - 0.5) <= cross_width / 2,
+            np.abs(x[2] - 0.5) <= cross_width / 2
+        ])
+        spike_y_neg = np.logical_and.reduce([
+            x[1] <= 0.5,
+            x[1] >= 0.5 - cross_width,
+            np.abs(x[0] - 0.5) <= cross_width / 2,
+            np.abs(x[2] - 0.5) <= cross_width / 2
+        ])
+        
+        # Z-axis spike: extends in +/- z direction, square cross-section
+        spike_z_pos = np.logical_and.reduce([
+            x[2] >= 0.5,
+            x[2] <= 0.5 + cross_width,
+            np.abs(x[0] - 0.5) <= cross_width / 2,
+            np.abs(x[1] - 0.5) <= cross_width / 2
+        ])
+        spike_z_neg = np.logical_and.reduce([
+            x[2] <= 0.5,
+            x[2] >= 0.5 - cross_width,
+            np.abs(x[0] - 0.5) <= cross_width / 2,
+            np.abs(x[1] - 0.5) <= cross_width / 2
+        ])
 
-        values[np.logical_or.reduce([bar_x, bar_y, bar_z])] = 1.0
+        values[np.logical_or.reduce([
+            spike_x_pos, spike_x_neg,
+            spike_y_pos, spike_y_neg,
+            spike_z_pos, spike_z_neg
+        ])] = 1.0
         return values
