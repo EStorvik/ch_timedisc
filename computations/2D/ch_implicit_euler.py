@@ -61,8 +61,9 @@ pf_old, mu_old = split(xi_old)
 initialcondition = ch.Cross2D(width=0.3)
 xi.sub(0).interpolate(initialcondition)
 
-# Compute consistent initial chemical potential (handle subspace by collapsing)
-# mu = ch.interpolate_mu(pf, mu, eta_mu, V, parameters, doublewell)
+# Interpolate initial condition to mu
+mu0 = ch.intitial_mu(pf, P1, msh, parameters=parameters, doublewell=doublewell)
+xi.sub(1).interpolate(mu0)
 xi.x.scatter_forward()
 
 # Copy to old
@@ -83,22 +84,11 @@ F_mu = (
 F = F_pf + F_mu
 
 
-
+# Set up nonlinear problem
 problem = NonlinearProblem(
     F, xi, petsc_options_prefix="ch_implicit_", petsc_options=parameters.petsc_options
 )
 
-# problem = NonlinearProblem(F, xi)
-# solver = NewtonSolver(MPI.COMM_WORLD, problem)
-# solver.convergence_criterion = "incremental"
-# solver.max_it = parameters.max_iter
-# solver.rtol = parameters.tol
-# solver.atol = 1e-8
-
-# # Configure the linear solver
-# ksp = solver.krylov_solver
-# opts = ksp.getOptionsPrefix()
-# ksp.setFromOptions()
 
 # Pyvista plot
 viz = ch.visualization.PyvistaVizualization(V.sub(0), xi.sub(0), 0.0)
@@ -107,18 +97,10 @@ viz = ch.visualization.PyvistaVizualization(V.sub(0), xi.sub(0), 0.0)
 # output_file_pf = XDMFFile(MPI.COMM_WORLD, "../output/ch_implicit.xdmf", "w")
 # output_file_pf.write_mesh(msh)
 
-
-# # Energy
-# def energy_i(pf, dx):
-#     return gamma * (1 / ell * doublewell(pf) + ell / 2 * inner(grad(pf), grad(pf))) * dx
-
-
 # Time stepping
 t = parameters.t0
 
-# Prepare viewer for plotting the solution during the computation
 
-# energy_vec = [assemble_scalar(form(energy_i(pf, dx=Measure("dx", domain=msh))))]
 time_vec = [t]
 
 for i in range(parameters.num_time_steps):
@@ -158,7 +140,7 @@ plt.show()
 
 
 plt.figure("dt Energy")
-plt.plot(time_vec[2:],energy.energy_dt_vec()[1:])
-plt.plot(time_vec[2:], energy.gradmu_squared_vec[2:])
+plt.plot(time_vec[1:], energy.energy_dt_vec())
+plt.plot(time_vec[:], energy.gradmu_squared_vec[:])
 plt.show()
 # output_file_pf.close()

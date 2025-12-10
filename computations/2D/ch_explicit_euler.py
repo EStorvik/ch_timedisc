@@ -21,8 +21,6 @@ import ch_timedisc as ch
 print(dolfinx.__version__)
 
 
-
-
 # Define material parameters
 parameters = ch.Parameters()
 gamma = parameters.gamma

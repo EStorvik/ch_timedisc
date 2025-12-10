@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 import ch_timedisc as ch
 
 
-
 # Define material parameters
 parameters = ch.Parameters()
 gamma = parameters.gamma

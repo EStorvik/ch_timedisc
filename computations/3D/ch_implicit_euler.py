@@ -31,8 +31,7 @@ dt = parameters.dt
 doublewell = ch.DoubleWell()
 
 # Mesh
-msh = mesh.create_unit_cube(
-    MPI.COMM_WORLD, parameters.nx, parameters.ny, parameters.nz)
+msh = mesh.create_unit_cube(MPI.COMM_WORLD, parameters.nx, parameters.ny, parameters.nz)
 
 # Finite elements
 P1 = element("Lagrange", msh.basix_cell(), 1)
@@ -89,9 +88,7 @@ opts = ksp.getOptionsPrefix()
 ksp.setFromOptions()
 
 # Pyvista plot
-viz = ch.visualization.PyvistaVizualization3D(
-    V.sub(0), xi.sub(0), 0.0, mode="slices"
-)
+viz = ch.visualization.PyvistaVizualization3D(V.sub(0), xi.sub(0), 0.0, mode="slices")
 
 # Output file
 output_file_pf = XDMFFile(MPI.COMM_WORLD, "../output/ch_implicit_3D.xdmf", "w")
