@@ -104,14 +104,14 @@ class PyvistaVizualization3D:
         if self.mode == "isosurface":
             # Show interface at pf=0.5
             contours = self.grid.contour([0.5])
-            self.p.add_mesh(contours, color='red', opacity=0.8, name="interface")
+            self.p.add_mesh(contours, color="red", opacity=0.8, name="interface")
         elif self.mode == "volume":
             # Volume rendering with opacity mapping
             self.p.add_volume(
                 self.grid,
                 opacity=[0, 0, 0.3, 0.6, 0.3, 0, 0],
                 cmap="coolwarm",
-                name="volume"
+                name="volume",
             )
         elif self.mode == "slices":
             # Orthogonal slice planes
@@ -120,12 +120,12 @@ class PyvistaVizualization3D:
         elif self.mode == "combined":
             # Interface + semi-transparent volume
             contours = self.grid.contour([0.5])
-            self.p.add_mesh(contours, color='red', opacity=0.9, name="interface")
+            self.p.add_mesh(contours, color="red", opacity=0.9, name="interface")
             self.p.add_volume(
                 self.grid,
                 opacity=[0, 0, 0.2, 0.4, 0.2, 0, 0],
                 cmap="coolwarm",
-                name="volume"
+                name="volume",
             )
         else:
             raise ValueError(f"Unknown mode: {self.mode}")
@@ -147,14 +147,14 @@ class PyvistaVizualization3D:
         if self.mode == "isosurface":
             self.p.remove_actor("interface")
             contours = self.grid.contour([0.5])
-            self.p.add_mesh(contours, color='red', opacity=0.8, name="interface")
+            self.p.add_mesh(contours, color="red", opacity=0.8, name="interface")
         elif self.mode == "volume":
             self.p.remove_actor("volume")
             self.p.add_volume(
                 self.grid,
                 opacity=[0, 0, 0.3, 0.6, 0.3, 0, 0],
                 cmap="coolwarm",
-                name="volume"
+                name="volume",
             )
         elif self.mode == "slices":
             self.p.remove_actor("slices")
@@ -164,12 +164,12 @@ class PyvistaVizualization3D:
             self.p.remove_actor("interface")
             self.p.remove_actor("volume")
             contours = self.grid.contour([0.5])
-            self.p.add_mesh(contours, color='red', opacity=0.9, name="interface")
+            self.p.add_mesh(contours, color="red", opacity=0.9, name="interface")
             self.p.add_volume(
                 self.grid,
                 opacity=[0, 0, 0.2, 0.4, 0.2, 0, 0],
                 cmap="coolwarm",
-                name="volume"
+                name="volume",
             )
 
         self.p.app.processEvents()
@@ -188,27 +188,22 @@ class PyvistaVizualization3D:
 
         if self.mode == "isosurface":
             contours = self.grid.contour([0.5])
-            plotter.add_mesh(contours, color='red', opacity=0.8)
+            plotter.add_mesh(contours, color="red", opacity=0.8)
         elif self.mode == "volume":
             plotter.add_volume(
-                self.grid,
-                opacity=[0, 0, 0.3, 0.6, 0.3, 0, 0],
-                cmap="coolwarm"
+                self.grid, opacity=[0, 0, 0.3, 0.6, 0.3, 0, 0], cmap="coolwarm"
             )
         elif self.mode == "slices":
             slices = self.grid.slice_orthogonal()
             plotter.add_mesh(slices, cmap="viridis", opacity=0.8)
         elif self.mode == "combined":
             contours = self.grid.contour([0.5])
-            plotter.add_mesh(contours, color='red', opacity=0.9)
+            plotter.add_mesh(contours, color="red", opacity=0.9)
             plotter.add_volume(
-                self.grid,
-                opacity=[0, 0, 0.2, 0.4, 0.2, 0, 0],
-                cmap="coolwarm"
+                self.grid, opacity=[0, 0, 0.2, 0.4, 0.2, 0, 0], cmap="coolwarm"
             )
 
         screenshot = None
         if pv.OFF_SCREEN:
             screenshot = f"{self.name}_3d.png"
         plotter.show(screenshot=screenshot)
-

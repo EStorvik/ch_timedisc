@@ -26,7 +26,6 @@ class Parameters:
         self.tol = 1.0e-6
         self.max_iter = 200
 
-
         use_superlu = PETSc.IntType == np.int64  # or PETSc.ScalarType == np.complex64
         sys = PETSc.Sys()  # type: ignore
         if sys.hasExternalPackage("mumps") and not use_superlu:

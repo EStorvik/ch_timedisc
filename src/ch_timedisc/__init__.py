@@ -8,5 +8,14 @@ from .intital_conditions.interpolate_mu import interpolate_mu
 from .visualization.pyvista_visualization import PyvistaVizualization
 from .visualization.energy import Energy
 
-__all__ = ["Parameters", "DoubleWell", "Cross2D", "Cross3D", "Random", "PyvistaVizualization", "Energy", "interpolate_mu"]
+__all__ = [
+    "Parameters",
+    "DoubleWell",
+    "Cross2D",
+    "Cross3D",
+    "Random",
+    "PyvistaVizualization",
+    "Energy",
+    "interpolate_mu",
+]
 __version__ = "0.1.0"

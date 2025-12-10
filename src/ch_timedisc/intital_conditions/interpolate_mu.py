@@ -6,15 +6,14 @@ from dolfinx.fem import Function
 from dolfinx.fem.petsc import LinearProblem
 
 
-def interpolate_mu(pf, mu, eta_mu, V, parameters: ch.Parameters, doublewell: ch.DoubleWell):
+def interpolate_mu(
+    pf, mu, eta_mu, V, parameters: ch.Parameters, doublewell: ch.DoubleWell
+):
 
     from ufl import TestFunction, TrialFunction, dx, split
 
-
     x = TrialFunction(V)
     _, u = split(x)
-
-
 
     ell = parameters.ell
 
