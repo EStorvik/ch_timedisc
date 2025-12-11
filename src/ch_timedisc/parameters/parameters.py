@@ -10,11 +10,11 @@ class Parameters:
 
         # Model
         self.gamma = 1
-        self.ell = 0.025
+        self.ell = 0.05
         self.mobility = 1.0
 
         # Time Discretization
-        self.dt = 1.0e-3
+        self.dt = 1.0e-4
         self.t0 = 0
         self.num_time_steps = 20
         self.T = self.dt * self.num_time_steps

@@ -48,6 +48,42 @@ class DoubleWell:
             float or array: The derivative value(s).
         """
         return self.scaling * (2 * pf - 6 * pf**2 + 4 * pf**3)
+    
+    def doubleprime(self, pf):
+        """
+        Evaluate the double derivative of the double well potential.
+
+        Args:
+            pf (float or array): Phase field value(s).
+
+        Returns:
+            float or array: The derivative value(s).
+        """
+        return self.scaling * (2 - 12 * pf + 12 * pf**2)
+    
+    def tripleprime(self, pf):
+        """
+        Evaluate the triple derivative of the double well potential.
+
+        Args:
+            pf (float or array): Phase field value(s).
+
+        Returns:
+            float or array: The derivative value(s).
+        """
+        return self.scaling * ( - 12 + 24 * pf)
+    
+    def quadprime(self, pf):
+        """
+        Evaluate the quadruple derivative of the double well potential.
+
+        Args:
+            pf (float or array): Phase field value(s).
+
+        Returns:
+            float or array: The derivative value(s).
+        """
+        return self.scaling * (24)
 
     def c(self, pf):
         """

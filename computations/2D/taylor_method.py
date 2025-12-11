@@ -70,7 +70,6 @@ mu0 = ch.initial_mu(pf, P1, msh, parameters=parameters, doublewell=doublewell)
 xi.sub(1).interpolate(mu0)
 xi.x.scatter_forward()
 
-
 # Copy to old
 xi_old.x.array[:] = xi.x.array
 xi_old.x.scatter_forward()
@@ -83,8 +82,8 @@ F_pf = (
 )
 F_mu = (
     inner(mu, eta_mu) * dx
-    - gamma * ell * inner(grad(pf), grad(eta_mu)) * dx
-    - gamma / ell * doublewell.prime(pf) * eta_mu * dx
+    - gamma * ell * inner((grad(pf)+grad(pf_old))*0.5, grad(eta_mu)) * dx
+    - gamma / ell * (doublewell.prime(pf)-0.5*doublewell.doubleprime(pf)*(pf-pf_old)+1/6*doublewell.tripleprime(pf)*(pf-pf_old)**2-1/24*doublewell.quadprime(pf)*(pf-pf_old)**3) * eta_mu * dx
 )
 F = F_pf + F_mu
 

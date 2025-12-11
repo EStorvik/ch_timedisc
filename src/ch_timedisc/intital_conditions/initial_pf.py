@@ -7,7 +7,7 @@ from ufl import TestFunction, TrialFunction, dx, split
 from dolfinx.fem.petsc import LinearProblem
 
 
-def initial_mu(pf0, P, msh, parameters: ch.Parameters, doublewell: ch.DoubleWell):
+def initial_pf(pf0, P, msh, parameters: ch.Parameters):
 
     V = functionspace(msh, P)
     u = TrialFunction(V)
@@ -15,12 +15,8 @@ def initial_mu(pf0, P, msh, parameters: ch.Parameters, doublewell: ch.DoubleWell
 
     ell = parameters.ell
 
-    # Variational form: ∫ mu * v dx = ell ∫ ∇pf·∇v dx + (1/ell) ∫ f'(pf) v dx
-    a = inner(u, v) * dx
-    L = (
-        ell * inner(grad(pf0), grad(v)) * dx
-        + (1 / ell) * doublewell.prime(pf0) * v * dx
-    )
+    a = 1/ell*inner(u, v) * dx + ell*(inner(grad(u),grad(v))) * dx
+    L = 1/ell*inner(pf0,v) * dx
 
     problem = LinearProblem(
         a,
@@ -33,6 +29,6 @@ def initial_mu(pf0, P, msh, parameters: ch.Parameters, doublewell: ch.DoubleWell
             "ksp_error_if_not_converged": True,
         },
     )
-    mu0 = problem.solve()
+    pf = problem.solve()
 
-    return mu0
+    return pf

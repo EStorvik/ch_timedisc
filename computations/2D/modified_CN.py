@@ -58,18 +58,14 @@ pf_old, mu_old = split(xi_old)
 
 
 # Initial conditions
-initialcondition = ch.Cross2D(width=0.3)
-# initialcondition = ch.Random()
+# initialcondition = ch.Cross2D(width=0.3)
+initialcondition = ch.Random()
 xi.sub(0).interpolate(initialcondition)
-pf0 = ch.initial_pf(pf, P1, msh, parameters=parameters)
-xi.sub(0).interpolate(pf0)
-xi.x.scatter_forward()
 
 # Interpolate initial condition to mu
-mu0 = ch.initial_mu(pf, P1, msh, parameters=parameters, doublewell=doublewell)
+mu0 = ch.intitial_mu(pf, P1, msh, parameters=parameters, doublewell=doublewell)
 xi.sub(1).interpolate(mu0)
 xi.x.scatter_forward()
-
 
 # Copy to old
 xi_old.x.array[:] = xi.x.array
@@ -83,8 +79,8 @@ F_pf = (
 )
 F_mu = (
     inner(mu, eta_mu) * dx
-    - gamma * ell * inner(grad(pf), grad(eta_mu)) * dx
-    - gamma / ell * doublewell.prime(pf) * eta_mu * dx
+    - gamma * ell * inner((grad(pf)+grad(pf_old))*0.5, grad(eta_mu)) * dx
+    - gamma / ell * (doublewell.prime(pf)) * eta_mu * dx
 )
 F = F_pf + F_mu
 
