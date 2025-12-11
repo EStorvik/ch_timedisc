@@ -14,9 +14,9 @@ class Parameters:
         self.mobility = 1.0
 
         # Time Discretization
-        self.dt = 1.0e-6
+        self.dt = 1.0e-3
         self.t0 = 0
-        self.num_time_steps = 10
+        self.num_time_steps = 20
         self.T = self.dt * self.num_time_steps
 
         # Spatial Discretization

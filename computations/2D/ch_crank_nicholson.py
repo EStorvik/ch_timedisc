@@ -79,8 +79,8 @@ F_pf = (
 )
 F_mu = (
     inner(mu, eta_mu) * dx
-    - gamma * ell * inner(grad(pf_old), grad(eta_mu)) * dx
-    - gamma / ell * doublewell.prime(pf_old) * eta_mu * dx
+    - 0.5*gamma * ell * inner(grad(pf)+grad(pf_old), grad(eta_mu)) * dx
+    - 0.5*gamma / ell * (doublewell.prime(pf) + doublewell.prime(pf_old))* eta_mu * dx
 )
 F = F_pf + F_mu
 

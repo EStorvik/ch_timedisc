@@ -59,6 +59,7 @@ pf_old, mu_old = split(xi_old)
 
 # Initial conditions
 initialcondition = ch.Cross2D(width=0.3)
+# initialcondition = ch.Random()
 xi.sub(0).interpolate(initialcondition)
 
 # Interpolate initial condition to mu
@@ -134,13 +135,23 @@ for i in range(parameters.num_time_steps):
 
 viz.final_plot(xi.sub(0))
 
-plt.figure("Energy evolution")
-plt.plot(time_vec, energy.energy_vec)
-plt.show()
+
+plt.rcParams['text.usetex'] = True
+plt.rcParams['font.family'] = 'serif'  # or 'sans-serif'
+plt.rcParams['font.size'] = 16
+
+# plt.figure("Energy evolution")
+# plt.plot(time_vec, energy.energy_vec)
+# plt.show()
 
 
 plt.figure("dt Energy")
-plt.plot(time_vec[1:], energy.energy_dt_vec())
-plt.plot(time_vec[:], energy.gradmu_squared_vec[:])
+plt.plot(time_vec[2:], energy.energy_dt_vec()[1:], label = r'$\partial_t\mathcal{E}$')
+plt.plot(time_vec[2:], energy.gradmu_squared_vec[2:], label = r'$-m\|\nabla\mu\|^2$')
+
+plt.legend()
+
+plt.figure("dte - mnmu^2")
+plt.plot(time_vec[2:], np.array(energy.energy_dt_vec()[1:])-np.array(energy.gradmu_squared_vec[2:]))
 plt.show()
 # output_file_pf.close()
