@@ -10,13 +10,13 @@ class Parameters:
 
         # Model
         self.gamma = 1
-        self.ell = 0.05
+        self.ell = 0.025
         self.mobility = 1.0
 
         # Time Discretization
-        self.dt = 1.0e-4
+        self.dt = 1e-3
         self.t0 = 0
-        self.num_time_steps = 20
+        self.num_time_steps = 40
         self.T = self.dt * self.num_time_steps
 
         # Spatial Discretization

@@ -8,6 +8,9 @@ from .intital_conditions.initial_mu import initial_mu
 from .intital_conditions.initial_pf import initial_pf
 from .visualization.pyvista_visualization import PyvistaVizualization
 from .visualization.energy import Energy
+from .fem.fem_handler import FEMHandler
+from .variational_forms.eyre import VariationalEyre
+from .time_marching.time_marching import TimeMarching
 
 __all__ = [
     "Parameters",
@@ -17,7 +20,12 @@ __all__ = [
     "Random",
     "PyvistaVizualization",
     "Energy",
+    "FEMHandler",
+    "VariationalEyre",
+    "TimeMarching",
     "initial_mu",
     "initial_pf",
 ]
 __version__ = "0.1.0"
+
+

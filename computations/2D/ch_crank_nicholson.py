@@ -61,9 +61,13 @@ pf_old, mu_old = split(xi_old)
 initialcondition = ch.Cross2D(width=0.3)
 # initialcondition = ch.Random()
 xi.sub(0).interpolate(initialcondition)
+pf0 = ch.initial_pf(pf, P1, msh, parameters=parameters)
+xi.sub(0).interpolate(pf0)
+xi.x.scatter_forward()
+
 
 # Interpolate initial condition to mu
-mu0 = ch.intitial_mu(pf, P1, msh, parameters=parameters, doublewell=doublewell)
+mu0 = ch.initial_mu(pf, P1, msh, parameters=parameters, doublewell=doublewell)
 xi.sub(1).interpolate(mu0)
 xi.x.scatter_forward()
 
@@ -101,7 +105,8 @@ viz = ch.visualization.PyvistaVizualization(V.sub(0), xi.sub(0), 0.0)
 # Time stepping
 t = parameters.t0
 
-
+solution_list_pf = [xi.sub(0).x.array.copy()]
+solution_list_mu = [xi.sub(1).x.array.copy()]
 time_vec = [t]
 
 for i in range(parameters.num_time_steps):
@@ -114,6 +119,8 @@ for i in range(parameters.num_time_steps):
 
     # Solve
     n, converged = problem.solve()
+    solution_list_pf.append(xi.sub(0).x.array.copy())
+    solution_list_mu.append(xi.sub(1).x.array.copy())
 
     if not converged:
         print(f"WARNING: Newton solver did not converge at time step {i}")
@@ -135,6 +142,17 @@ for i in range(parameters.num_time_steps):
 
 viz.final_plot(xi.sub(0))
 
+results = {
+    'dt, ell, nx' : np.array([parameters.dt, parameters.ell, parameters.nx]),
+    'Time': np.array(time_vec),
+    'Energy': np.array(energy.energy_vec),
+    'dtE': np.array(energy.energy_dt_vec()),
+    '-mGradMuSquared': np.array(energy.gradmu_squared_vec),
+    'pf': np.array(solution_list_pf),
+    'mu': np.array(solution_list_mu),
+}
+
+np.savez('results_CN_em5.npz', **results)
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'serif'  # or 'sans-serif'

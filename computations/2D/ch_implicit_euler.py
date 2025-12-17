@@ -105,7 +105,8 @@ viz = ch.visualization.PyvistaVizualization(V.sub(0), xi.sub(0), 0.0)
 # Time stepping
 t = parameters.t0
 
-
+solution_list_pf = [xi.sub(0).x.array.copy()]
+solution_list_mu = [xi.sub(1).x.array.copy()]
 time_vec = [t]
 
 for i in range(parameters.num_time_steps):
@@ -118,7 +119,8 @@ for i in range(parameters.num_time_steps):
 
     # Solve
     n, converged = problem.solve()
-
+    solution_list_pf.append(xi.sub(0).x.array.copy())
+    solution_list_mu.append(xi.sub(1).x.array.copy())
     if not converged:
         print(f"WARNING: Newton solver did not converge at time step {i}")
 
@@ -139,6 +141,17 @@ for i in range(parameters.num_time_steps):
 
 viz.final_plot(xi.sub(0))
 
+results = {
+    'dt, ell, nx' : np.array([parameters.dt, parameters.ell, parameters.nx]),
+    'Time': np.array(time_vec),
+    'Energy': np.array(energy.energy_vec),
+    'dtE': np.array(energy.energy_dt_vec()),
+    '-mGradMuSquared': np.array(energy.gradmu_squared_vec),
+    'pf': np.array(solution_list_pf),
+    'mu': np.array(solution_list_mu),
+}
+
+np.savez('results_IE_em4.npz', **results)
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'serif'  # or 'sans-serif'
