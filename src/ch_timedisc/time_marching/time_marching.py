@@ -89,6 +89,5 @@ class TimeMarching:
             if self.viz is not None:
                 self.viz.update(self.femhandler.xi.sub(0), t)
 
-            # Track and print energy
-            print(self.energy(self.femhandler.pf, self.femhandler.mu))
-
+            # Track energy
+            self.energy(self.femhandler.pf, self.femhandler.mu)

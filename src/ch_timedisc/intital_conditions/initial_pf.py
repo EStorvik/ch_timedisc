@@ -15,8 +15,8 @@ def initial_pf(pf0, P, msh, parameters: ch.Parameters):
 
     ell = parameters.ell
 
-    a = 1/ell*inner(u, v) * dx + ell*(inner(grad(u),grad(v))) * dx
-    L = 1/ell*inner(pf0,v) * dx
+    a = 1 / ell * inner(u, v) * dx + ell * (inner(grad(u), grad(v))) * dx
+    L = 1 / ell * inner(pf0, v) * dx
 
     problem = LinearProblem(
         a,

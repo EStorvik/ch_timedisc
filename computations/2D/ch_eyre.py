@@ -29,31 +29,48 @@ msh = mesh.create_unit_square(
 )
 
 # Initial condition
-initialcondition = ch.Cross2D(width = 0.3)
+# initialcondition = ch.Cross2D(width=0.3)
+initialcondition = ch.Random()
+
 
 # Set up femhandler
-femhandler = ch.FEMHandler(msh, initialcondition=initialcondition, parameters=parameters, doublewell=doublewell)
+femhandler = ch.FEMHandler(
+    msh, initialcondition=initialcondition, parameters=parameters, doublewell=doublewell
+)
 
 # Energy computations
-energy = ch.Energy(femhandler.pf, femhandler.mu, parameters, doublewell)
+energy = ch.Energy(femhandler=femhandler, parameters=parameters, doublewell=doublewell)
 
 # Linear variational form
-eyre = ch.VariationalEyre(femhandler=femhandler, parameters=parameters, doublewell=doublewell)
+eyre = ch.VariationalEyre(
+    femhandler=femhandler, parameters=parameters, doublewell=doublewell
+)
 
 # Set up nonlinear problem
 problem = NonlinearProblem(
-    eyre.F, femhandler.xi, petsc_options_prefix="ch_eyre_", petsc_options=parameters.petsc_options
+    eyre.F,
+    femhandler.xi,
+    petsc_options_prefix="ch_eyre_",
+    petsc_options=parameters.petsc_options,
 )
 
 # Pyvista plot
-viz = ch.visualization.PyvistaVizualization(femhandler.V.sub(0), femhandler.xi.sub(0), 0.0)
+viz = ch.visualization.PyvistaVizualization(
+    femhandler.V.sub(0), femhandler.xi.sub(0), 0.0
+)
 
 # Output file
 # output_file_pf = XDMFFile(MPI.COMM_WORLD, "../output/ch_implicit.xdmf", "w")
 # output_file_pf.write_mesh(msh)
 
 # Set up time marching
-time_marching = ch.TimeMarching(femhandler=femhandler, parameters=parameters, energy=energy, problem=problem, viz = viz)
+time_marching = ch.TimeMarching(
+    femhandler=femhandler,
+    parameters=parameters,
+    energy=energy,
+    problem=problem,
+    viz=viz,
+)
 
 # Perform time marching
 time_marching()
@@ -62,9 +79,9 @@ time_marching()
 viz.final_plot(femhandler.xi.sub(0))
 
 
-plt.rcParams['text.usetex'] = True
-plt.rcParams['font.family'] = 'serif'  # or 'sans-serif'
-plt.rcParams['font.size'] = 16
+plt.rcParams["text.usetex"] = True
+plt.rcParams["font.family"] = "serif"  # or 'sans-serif'
+plt.rcParams["font.size"] = 16
 
 # plt.figure("Energy evolution")
 # plt.plot(time_vec, energy.energy_vec)
@@ -73,12 +90,19 @@ plt.rcParams['font.size'] = 16
 time_vec = time_marching.time_vec
 
 plt.figure("dt Energy")
-plt.plot(time_vec[2:], energy.energy_dt_vec()[1:], label = r'$\partial_t\mathcal{E}$')
-plt.plot(time_vec[2:], np.array(energy.gradmu_squared_vec[2:])/2, label = r'$-m\|\nabla\mu\|^2/2$')
+plt.plot(time_vec[2:], energy.energy_dt_vec()[1:], label=r"$\partial_t\mathcal{E}$")
+plt.plot(
+    time_vec[2:],
+    np.array(energy.gradmu_squared_vec[2:]) / 2,
+    label=r"$-m\|\nabla\mu\|^2/2$",
+)
 
 plt.legend()
 
 plt.figure("dte - mnmu^2")
-plt.plot(time_vec[2:], np.array(energy.energy_dt_vec()[1:])-np.array(energy.gradmu_squared_vec[2:]))
+plt.plot(
+    time_vec[2:],
+    np.array(energy.energy_dt_vec()[1:]) - np.array(energy.gradmu_squared_vec[2:]),
+)
 plt.show()
 # output_file_pf.close()

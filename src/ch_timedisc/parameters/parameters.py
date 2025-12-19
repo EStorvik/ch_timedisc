@@ -6,7 +6,7 @@ from petsc4py import PETSc
 
 class Parameters:
 
-    def __init__(self):
+    def __init__(self, dt=1e-6, num_time_steps=40):
 
         # Model
         self.gamma = 1
@@ -14,9 +14,10 @@ class Parameters:
         self.mobility = 1.0
 
         # Time Discretization
-        self.dt = 1e-3
+
+        self.dt = dt
         self.t0 = 0
-        self.num_time_steps = 40
+        self.num_time_steps = num_time_steps
         self.T = self.dt * self.num_time_steps
 
         # Spatial Discretization

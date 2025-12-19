@@ -79,7 +79,7 @@ F_pf = (
 )
 F_mu = (
     inner(mu, eta_mu) * dx
-    - gamma * ell * inner((grad(pf)+grad(pf_old))*0.5, grad(eta_mu)) * dx
+    - gamma * ell * inner((grad(pf) + grad(pf_old)) * 0.5, grad(eta_mu)) * dx
     - gamma / ell * (doublewell.prime(pf)) * eta_mu * dx
 )
 F = F_pf + F_mu
@@ -136,9 +136,9 @@ for i in range(parameters.num_time_steps):
 viz.final_plot(xi.sub(0))
 
 
-plt.rcParams['text.usetex'] = True
-plt.rcParams['font.family'] = 'serif'  # or 'sans-serif'
-plt.rcParams['font.size'] = 16
+plt.rcParams["text.usetex"] = True
+plt.rcParams["font.family"] = "serif"  # or 'sans-serif'
+plt.rcParams["font.size"] = 16
 
 # plt.figure("Energy evolution")
 # plt.plot(time_vec, energy.energy_vec)
@@ -146,12 +146,15 @@ plt.rcParams['font.size'] = 16
 
 
 plt.figure("dt Energy")
-plt.plot(time_vec[2:], energy.energy_dt_vec()[1:], label = r'$\partial_t\mathcal{E}$')
-plt.plot(time_vec[2:], energy.gradmu_squared_vec[2:], label = r'$-m\|\nabla\mu\|^2$')
+plt.plot(time_vec[2:], energy.energy_dt_vec()[1:], label=r"$\partial_t\mathcal{E}$")
+plt.plot(time_vec[2:], energy.gradmu_squared_vec[2:], label=r"$-m\|\nabla\mu\|^2$")
 
 plt.legend()
 
 plt.figure("dte - mnmu^2")
-plt.plot(time_vec[2:], np.array(energy.energy_dt_vec()[1:])-np.array(energy.gradmu_squared_vec[2:]))
+plt.plot(
+    time_vec[2:],
+    np.array(energy.energy_dt_vec()[1:]) - np.array(energy.gradmu_squared_vec[2:]),
+)
 plt.show()
 # output_file_pf.close()

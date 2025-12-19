@@ -22,7 +22,12 @@ class Energy:
         gradmu_squared_vec (list): Squared gradient of chemical potential at each step.
     """
 
-    def __init__(self, pf0, mu0, parameters: ch.Parameters, doublewell: ch.DoubleWell):
+    def __init__(
+        self,
+        femhandler: ch.FEMHandler,
+        parameters: ch.Parameters,
+        doublewell: ch.DoubleWell,
+    ):
         """Initialize the energy tracker.
 
         Args:
@@ -38,6 +43,8 @@ class Energy:
         self.doublewell = doublewell
         self.energy_vec = []
         self.gradmu_squared_vec = []
+        pf0 = femhandler.pf
+        mu0 = femhandler.mu
         self(pf0, mu0)
 
     def energy(self, pf):
