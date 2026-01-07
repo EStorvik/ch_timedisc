@@ -6,7 +6,7 @@ from petsc4py import PETSc
 
 class Parameters:
 
-    def __init__(self, dt=1e-6, num_time_steps=40):
+    def __init__(self, dt=1e-5, num_time_steps=1000):
 
         # Model
         self.gamma = 1

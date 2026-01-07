@@ -34,7 +34,9 @@ class VariationalImplicitEuler:
             parameters (Parameters): Simulation parameters (dt, gamma, ell, mobility).
             doublewell (DoubleWell): Double well potential with cprime and eprime.
         """
-        f = femhandler
+        self.femhandler = femhandler
+        self.doublewell = doublewell
+        f = self.femhandler
         p = parameters
 
         # Phase field equation: time discretization with decoupled mobility
@@ -47,7 +49,27 @@ class VariationalImplicitEuler:
         self.F_mu = (
             inner(f.mu, f.eta_mu) * dx
             - p.gamma * p.ell * inner(grad(f.pf), grad(f.eta_mu)) * dx
-            - (p.gamma / p.ell) * (doublewell.prime(f.pf)) * f.eta_mu * dx
+            - (p.gamma / p.ell) * (self.doublewell.prime(f.pf)) * f.eta_mu * dx
+        )
+
+        # Combined variational form for nonlinear solver
+        self.F = self.F_pf + self.F_mu
+
+    def update(self, parameters):
+        f = self.femhandler
+        p = parameters
+
+        # Phase field equation: time discretization with decoupled mobility
+        self.F_pf = (
+            inner(f.pf - f.pf_old, f.eta_pf) * dx
+            + p.dt * p.mobility * inner(grad(f.mu), grad(f.eta_pf)) * dx
+        )
+        # Chemical potential equation with convex-concave split
+        # mu = -gamma*ell*Δpf + (gamma/ell)*(cprime(pf_n) - eprime(pf_n-1))
+        self.F_mu = (
+            inner(f.mu, f.eta_mu) * dx
+            - p.gamma * p.ell * inner(grad(f.pf), grad(f.eta_mu)) * dx
+            - (p.gamma / p.ell) * (self.doublewell.prime(f.pf)) * f.eta_mu * dx
         )
 
         # Combined variational form for nonlinear solver

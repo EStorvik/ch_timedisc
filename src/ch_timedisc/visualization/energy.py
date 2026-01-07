@@ -37,8 +37,7 @@ class Energy:
             doublewell (DoubleWell): Double well potential object.
         """
         self.ell = parameters.ell
-        self.t_vec = [parameters.t0]
-        self.dt = parameters.dt
+        self.parameters = parameters
         self.mobility = parameters.mobility
         self.doublewell = doublewell
         self.energy_vec = []
@@ -79,6 +78,9 @@ class Energy:
         self.gradmu_squared_vec.append(self.gradmu_squared(mu))
         return energy
 
+    def dt_gradmusquared(self):
+        return (self.gradmu_squared_vec[-1]-self.gradmu_squared_vec[-2])/self.parameters.dt
+
     def energy_dt_vec(self):
         """Compute the discrete time derivative of energy.
 
@@ -88,7 +90,7 @@ class Energy:
         energy_dt_vec = []
         for i in range(len(self.energy_vec) - 1):
             energy_dt_vec.append(
-                (self.energy_vec[i + 1] - self.energy_vec[i]) / self.dt
+                (self.energy_vec[i + 1] - self.energy_vec[i]) / self.parameters.dt
             )
         return energy_dt_vec
 

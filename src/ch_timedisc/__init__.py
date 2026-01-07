@@ -14,6 +14,7 @@ from .variational_forms.implicit_euler import VariationalImplicitEuler
 from .variational_forms.accurate_dissipation import VariationalAccurateDissipation
 from .variational_forms.crank_nicholson import VariationalCrankNicholson
 from .time_marching.time_marching import TimeMarching
+from .time_marching.adaptive_time_step import AdaptiveTimeStep
 
 __all__ = [
     "Parameters",
@@ -29,6 +30,7 @@ __all__ = [
     "VariationalAccurateDissipation",
     "VariationalCrankNicholson",
     "TimeMarching",
+    "AdaptiveTimeStep",
     "initial_mu",
     "initial_pf",
 ]

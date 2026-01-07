@@ -27,8 +27,10 @@ class TimeMarching:
         parameters,
         energy,
         problem,
+        adaptive_time_step = None,
         verbose=False,
         viz=None,
+        output_file=None,
     ):
         """Initialize the time marching controller.
 
@@ -47,7 +49,9 @@ class TimeMarching:
         self.problem = problem
         self.verbose = verbose
         self.viz = viz
+        self.adaptive_time_step = adaptive_time_step
         self.time_vec = []
+        self.output_file = output_file
 
     def __call__(self):
         """Execute the time stepping loop and return time vector.
@@ -66,10 +70,15 @@ class TimeMarching:
         t = self.parameters.t0
         self.time_vec.append(t)
 
+        if self.output_file is not None:
+                pf_out, _ = self.femhandler.xi.split()
+                self.output_file.write_function(pf_out, t)
+
         for i in range(self.parameters.num_time_steps):
             # Copy current solution to old for time stepping
             self.femhandler.xi_old.x.array[:] = self.femhandler.xi.x.array
             self.femhandler.xi_old.x.scatter_forward()
+
 
             # Increment time
             t += self.parameters.dt
@@ -80,6 +89,14 @@ class TimeMarching:
             if not converged:
                 print(f"WARNING: Newton solver did not converge at time step {i}")
 
+            # Update and track energy
+            self.energy(self.femhandler.pf, self.femhandler.mu)
+
+
+            # Adaptive time-stepping
+            if self.adaptive_time_step is not None:
+                self.problem = self.adaptive_time_step()
+
             if self.verbose:
                 print(f"Used {n} newton iterations to converge at time step {i}.")
 
@@ -89,5 +106,7 @@ class TimeMarching:
             if self.viz is not None:
                 self.viz.update(self.femhandler.xi.sub(0), t)
 
-            # Track energy
-            self.energy(self.femhandler.pf, self.femhandler.mu)
+            if self.output_file is not None:
+                pf_out, _ = self.femhandler.xi.split()
+                self.output_file.write_function(pf_out, t)
+

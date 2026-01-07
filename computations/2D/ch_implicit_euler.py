@@ -13,6 +13,8 @@ from mpi4py import MPI
 
 import matplotlib.pyplot as plt
 
+from pathlib import Path
+
 
 import ch_timedisc as ch
 
@@ -30,7 +32,7 @@ msh = mesh.create_unit_square(
 
 # Initial condition
 # initialcondition = ch.Cross2D(width=0.3)
-initialcondition = ch.Random()
+initialcondition = ch.Random(seed = 42)
 
 # Set up femhandler
 femhandler = ch.FEMHandler(
@@ -60,12 +62,17 @@ viz = ch.visualization.PyvistaVizualization(
     femhandler.V.sub(0), femhandler.xi.sub(0), 0.0
 )
 
-# Output file
-# output_file_pf = XDMFFile(MPI.COMM_WORLD, "../output/ch_implicit.xdmf", "w")
+# Output file (absolute path under computations/output)
+# output_dir = Path(__file__).resolve().parent.parent / "output"
+# output_dir.mkdir(parents=True, exist_ok=True)
+# output_path = output_dir / "ch_implicit_random_e_m5.xdmf"
+# output_file_pf = XDMFFile(MPI.COMM_WORLD, str(output_path), "w")
 # output_file_pf.write_mesh(msh)
 
 # Time stepping
 t = parameters.t0
+adaptive_time_step = ch.AdaptiveTimeStep(energy=energy, femhandler= femhandler, variational_form= imp_euler ,parameters=parameters, verbose = True)
+
 
 # Set up time marching
 time_marching = ch.TimeMarching(
@@ -73,7 +80,9 @@ time_marching = ch.TimeMarching(
     parameters=parameters,
     energy=energy,
     problem=problem,
+    adaptive_time_step=adaptive_time_step,
     viz=viz,
+    # output_file = output_file_pf,
 )
 
 # Perform time marching
