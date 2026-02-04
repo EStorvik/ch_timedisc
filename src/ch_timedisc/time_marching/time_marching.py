@@ -27,7 +27,7 @@ class TimeMarching:
         parameters,
         energy,
         problem,
-        adaptive_time_step = None,
+        adaptive_time_step=None,
         verbose=False,
         viz=None,
         output_file=None,
@@ -71,14 +71,13 @@ class TimeMarching:
         self.time_vec.append(t)
 
         if self.output_file is not None:
-                pf_out, _ = self.femhandler.xi.split()
-                self.output_file.write_function(pf_out, t)
+            pf_out, _ = self.femhandler.xi.split()
+            self.output_file.write_function(pf_out, t)
 
         for i in range(self.parameters.num_time_steps):
             # Copy current solution to old for time stepping
             self.femhandler.xi_old.x.array[:] = self.femhandler.xi.x.array
             self.femhandler.xi_old.x.scatter_forward()
-
 
             # Increment time
             t += self.parameters.dt
@@ -91,7 +90,6 @@ class TimeMarching:
 
             # Update and track energy
             self.energy(self.femhandler.pf, self.femhandler.mu)
-
 
             # Adaptive time-stepping
             if self.adaptive_time_step is not None:
@@ -109,4 +107,3 @@ class TimeMarching:
             if self.output_file is not None:
                 pf_out, _ = self.femhandler.xi.split()
                 self.output_file.write_function(pf_out, t)
-

@@ -32,7 +32,7 @@ msh = mesh.create_unit_square(
 
 # Initial condition
 # initialcondition = ch.Cross2D(width=0.3)
-initialcondition = ch.Random(seed = 42)
+initialcondition = ch.Random(seed=42)
 
 # Set up femhandler
 femhandler = ch.FEMHandler(
@@ -71,7 +71,13 @@ viz = ch.visualization.PyvistaVizualization(
 
 # Time stepping
 t = parameters.t0
-adaptive_time_step = ch.AdaptiveTimeStep(energy=energy, femhandler= femhandler, variational_form= imp_euler ,parameters=parameters, verbose = True)
+adaptive_time_step = ch.AdaptiveTimeStep(
+    energy=energy,
+    femhandler=femhandler,
+    variational_form=imp_euler,
+    parameters=parameters,
+    verbose=True,
+)
 
 
 # Set up time marching

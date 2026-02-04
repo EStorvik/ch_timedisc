@@ -79,7 +79,9 @@ class Energy:
         return energy
 
     def dt_gradmusquared(self):
-        return (self.gradmu_squared_vec[-1]-self.gradmu_squared_vec[-2])/self.parameters.dt
+        return (
+            self.gradmu_squared_vec[-1] - self.gradmu_squared_vec[-2]
+        ) / self.parameters.dt
 
     def energy_dt_vec(self):
         """Compute the discrete time derivative of energy.

@@ -32,6 +32,6 @@ for i in range(4):
 plt.legend()
 plt.xlabel("Time / " + r"$t$")
 plt.ylabel("Energy / " + r"$\mathcal{E(\varphi)}$")
-plt.grid(True, alpha=0.8, linestyle=':', linewidth=0.5)
-plt.savefig('energy_dt_implicit_euler.pdf', bbox_inches='tight', dpi=300)
+plt.grid(True, alpha=0.8, linestyle=":", linewidth=0.5)
+plt.savefig("energy_dt_implicit_euler.pdf", bbox_inches="tight", dpi=300)
 plt.show()

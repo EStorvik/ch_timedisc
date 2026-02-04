@@ -49,7 +49,7 @@ class AdaptiveTimeStep:
     >>> parameters = ch.Parameters(dt=0.01)
     >>> energy = ch.Energy(...)  # Initialize with appropriate arguments
     >>> adaptive_dt = ch.AdaptiveTimeStep(energy, parameters, verbose=True)
-    >>> 
+    >>>
     >>> # In time stepping loop
     >>> for step in range(num_steps):
     >>>     # Solve the system
@@ -63,7 +63,14 @@ class AdaptiveTimeStep:
     based on the specific problem characteristics and desired accuracy.
     """
 
-    def __init__(self, energy: ch.Energy, femhandler: ch.FEMHandler, parameters: ch.Parameters, variational_form, verbose=False):
+    def __init__(
+        self,
+        energy: ch.Energy,
+        femhandler: ch.FEMHandler,
+        parameters: ch.Parameters,
+        variational_form,
+        verbose=False,
+    ):
         self.verbose = verbose
         self.energy = energy
         self.parameters = parameters
@@ -86,7 +93,7 @@ class AdaptiveTimeStep:
         evaluate whether the time step should be adjusted for the next step.
         """
         dt_grad_mu_sq = self.energy.dt_gradmusquared()
-        
+
         if dt_grad_mu_sq < 10:
             self.parameters.dt *= 2
             problem = self.update_problem()
@@ -97,13 +104,12 @@ class AdaptiveTimeStep:
             problem = self.update_problem()
         if self.verbose:
             print(f"Time step size is: {self.parameters.dt}")
-        
+
         return problem
 
-    
     def update_problem(self):
         self.variational_form.update(self.parameters)
-        
+
         # Set up nonlinear problem
         problem = NonlinearProblem(
             self.variational_form.F,

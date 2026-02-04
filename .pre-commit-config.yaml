@@ -1,0 +1,15 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        language_version: python3
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: /bin/bash -c 'MPICH_OFI_STARTUP_CONNECT=0 FI_PROVIDER=tcp MPI4PY_RC_FINALIZE=0 pytest'
+        language: system
+        types: [python]
+        pass_filenames: false
