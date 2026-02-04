@@ -1,13 +1,14 @@
 import numpy as np
+from numpy.typing import NDArray
 
 
 class Cross2D:
     """Indicator function for a 2D cross centered in the unit square."""
 
-    def __init__(self, width=0.1):
-        self.width = width
+    def __init__(self, width: float = 0.1) -> None:
+        self.width: float = width
 
-    def __call__(self, x):
+    def __call__(self, x: NDArray[np.floating]) -> NDArray[np.floating]:
         """Return 1 inside the cross arms and 0 elsewhere.
 
         Args:
@@ -34,10 +35,10 @@ class Cross2D:
 class Cross3D:
     """Indicator function for a 3D cross centered in the unit cube."""
 
-    def __init__(self, width=0.1):
-        self.width = width
+    def __init__(self, width: float = 0.1) -> None:
+        self.width: float = width
 
-    def __call__(self, x):
+    def __call__(self, x: NDArray[np.floating]) -> NDArray[np.floating]:
         """Return 1 inside the cross arms and 0 elsewhere.
 
         Args:

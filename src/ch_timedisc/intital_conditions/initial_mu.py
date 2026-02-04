@@ -1,13 +1,44 @@
-"""Chemical potential initialization from phase field."""
+"""Chemical potential initialization from phase field. This is actually not needed."""
+
+from typing import TYPE_CHECKING, Any
 
 import ch_timedisc as ch
 from ufl import grad, inner
 from dolfinx.fem import Function, functionspace
-from ufl import TestFunction, TrialFunction, dx, split
+from ufl import TestFunction, TrialFunction, dx
 from dolfinx.fem.petsc import LinearProblem
+from ufl.core.expr import Expr as UFLExpr
+
+if TYPE_CHECKING:
+    from dolfinx.mesh import Mesh
 
 
-def initial_mu(pf0, P, msh, parameters: ch.Parameters, doublewell: ch.DoubleWell):
+def initial_mu(
+    pf0: UFLExpr,
+    P: Any,
+    msh: "Mesh",
+    parameters: ch.Parameters,
+    doublewell: ch.DoubleWell,
+) -> Function:
+    """Initialize chemical potential from initial phase field.
+
+    Solves the variational problem:
+        ∫ mu * v dx = ell ∫ ∇pf·∇v dx + (1/ell) ∫ f'(pf) v dx
+
+    where mu is the chemical potential, pf is the phase field, and f' is the
+    derivative of the double-well potential. This recovers the chemical
+    potential field consistent with the phase field at initialization.
+
+    Args:
+        pf0: Initial phase field expression or function.
+        P: Finite element basis for the scalar field.
+        msh: Computational mesh.
+        parameters: Simulation parameters containing length scale (ell).
+        doublewell: Double well potential object for computing derivatives.
+
+    Returns:
+        Initial chemical potential function in the scalar function space.
+    """
 
     V = functionspace(msh, P)
     u = TrialFunction(V)

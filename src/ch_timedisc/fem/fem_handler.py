@@ -1,9 +1,18 @@
 """Finite element method setup and management for Cahn-Hilliard simulations."""
 
+from typing import TYPE_CHECKING, Callable
+
 from basix.ufl import element, mixed_element
 from dolfinx.fem import Function, functionspace
+from dolfinx.fem.function import FunctionSpace
 from ufl import split, TestFunction
+from ufl.core.expr import Expr as UFLExpr
 import ch_timedisc as ch
+
+if TYPE_CHECKING:
+    from dolfinx.mesh import Mesh
+    from ch_timedisc.parameters import Parameters
+    from ch_timedisc.doublewell import DoubleWell
 
 
 class FEMHandler:
@@ -23,11 +32,17 @@ class FEMHandler:
         mu (ufl.Coefficient): Current chemical potential component.
         xi_old (Function): Previous solution at time t-dt.
         pf_old (ufl.Coefficient): Previous phase field component.
-        mu_old (ufl.Coefficient): Previous chemical potential component.
+        mu_old (ufl.Coefficient): Previous chemical potential comp''''onent.
         initialcondition: Initial condition function for phase field.
     """
 
-    def __init__(self, msh, initialcondition, parameters, doublewell):
+    def __init__(
+        self,
+        msh: "Mesh",
+        initialcondition: Callable,
+        parameters: "Parameters",
+        doublewell: "DoubleWell",
+    ) -> None:
         """Initialize FEM setup for Cahn-Hilliard equation.
 
         Args:
@@ -42,28 +57,34 @@ class FEMHandler:
         ME = mixed_element([P1, P1])
 
         # Function spaces
-        self.V = functionspace(msh, ME)
+        self.V: FunctionSpace = functionspace(msh, ME)
 
         # Test function on mixed space
-        self.eta = TestFunction(self.V)
+        self.eta: TestFunction = TestFunction(self.V)
+        self.eta_pf: UFLExpr
+        self.eta_mu: UFLExpr
         self.eta_pf, self.eta_mu = split(self.eta)
 
         # Solution functions
-        self.xi = Function(self.V)
+        self.xi: Function = Function(self.V)
+        self.pf: UFLExpr
+        self.mu: UFLExpr
         self.pf, self.mu = split(self.xi)
 
-        self.xi_old = Function(self.V)
+        self.xi_old: Function = Function(self.V)
+        self.pf_old: UFLExpr
+        self.mu_old: UFLExpr
         self.pf_old, self.mu_old = split(self.xi_old)
 
         # Initialize phase field
         self.initialcondition = initialcondition
         self.xi.sub(0).interpolate(initialcondition)
-        pf0 = ch.initial_pf(self.pf, P1, msh, parameters=parameters)
+        pf0: UFLExpr = ch.initial_pf(self.pf, P1, msh, parameters=parameters)
         self.xi.sub(0).interpolate(pf0)
         self.xi.x.scatter_forward()
 
         # Initialize chemical potential from phase field
-        mu0 = ch.initial_mu(
+        mu0: UFLExpr = ch.initial_mu(
             self.pf, P1, msh, parameters=parameters, doublewell=doublewell
         )
         self.xi.sub(1).interpolate(mu0)

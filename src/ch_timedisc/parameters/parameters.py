@@ -1,31 +1,69 @@
 import numpy as np
+from typing import Dict, Any
 
 from dolfinx import default_real_type
 from petsc4py import PETSc
 
 
 class Parameters:
+    """
+    Configuration parameters for Cahn-Hilliard time discretization simulations.
 
-    def __init__(self, dt=1e-5, num_time_steps=1000):
+    This class encapsulates all parameters needed for the finite element simulation,
+    including model parameters, time discretization settings, spatial discretization,
+    nonlinear solver settings, and PETSc options.
+    """
+
+    def __init__(
+        self,
+        dt: float = 1e-5,
+        num_time_steps: int = 1000,
+        gamma: float = 1,
+        ell: float = 0.025,
+        mobility: float = 1.0,
+        nx: int = 64,
+        ny: int = 64,
+        nz: int = 64,
+        tol: float = 1.0e-6,
+        max_iter: int = 200,
+        t0: float = 0,
+    ) -> None:
+        """
+        Initialize simulation parameters with sensible defaults.
+
+        Args:
+            dt: Time step size. Default: 1e-5
+            num_time_steps: Number of time steps to simulate. Default: 1000
+            gamma: Surface tension parameter. Default: 1
+            ell: Interface thickness/length scale. Default: 0.025
+            mobility: Mobility parameter controlling dynamics. Default: 1.0
+            nx: Number of mesh points in x-direction. Default: 64
+            ny: Number of mesh points in y-direction. Default: 64
+            nz: Number of mesh points in z-direction. Default: 64
+            tol: Nonlinear solver tolerance. Default: 1.0e-6
+            max_iter: Maximum nonlinear solver iterations. Default: 200
+            t0: Initial time. Default: 0
+        """
 
         # Model
-        self.gamma = 1
-        self.ell = 0.025
-        self.mobility = 1.0
+        self.gamma: float = gamma
+        self.ell: float = ell
+        self.mobility: float = mobility
 
         # Time Discretization
-
-        self.dt = dt
-        self.t0 = 0
-        self.num_time_steps = num_time_steps
-        self.T = self.dt * self.num_time_steps
+        self.dt: float = dt
+        self.t0: float = t0
+        self.num_time_steps: int = num_time_steps
+        self.T: float = self.dt * self.num_time_steps
 
         # Spatial Discretization
-        self.nx = self.ny = self.nz = 64
+        self.nx: int = nx
+        self.ny: int = ny
+        self.nz: int = nz
 
         # Nonlinear iteration parameters
-        self.tol = 1.0e-6
-        self.max_iter = 200
+        self.tol: float = tol
+        self.max_iter: int = max_iter
 
         use_superlu = PETSc.IntType == np.int64  # or PETSc.ScalarType == np.complex64
         sys = PETSc.Sys()  # type: ignore
@@ -35,7 +73,7 @@ class Parameters:
             linear_solver = "superlu_dist"
         else:
             linear_solver = "petsc"
-        self.petsc_options = {
+        self.petsc_options: Dict[str, Any] = {
             "snes_type": "newtonls",
             "snes_linesearch_type": "none",
             "snes_stol": self.tol,

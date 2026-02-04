@@ -4,6 +4,8 @@ import os
 os.environ["FI_PROVIDER"] = "tcp"
 os.environ["MPICH_OFI_STARTUP_CONNECT"] = "0"
 
+import sys
+
 from dolfinx import mesh
 from dolfinx.fem.petsc import NonlinearProblem
 
