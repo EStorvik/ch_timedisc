@@ -1,6 +1,9 @@
-"""Tests for the doublewell module."""
+# Fix MPI/OFI finalization errors on macOS
+import os
 
-import pytest
+os.environ["FI_PROVIDER"] = "tcp"
+os.environ["MPICH_OFI_STARTUP_CONNECT"] = "0"
+
 import numpy as np
 from ch_timedisc.doublewell.doublewell import DoubleWell
 
