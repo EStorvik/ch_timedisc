@@ -23,7 +23,7 @@ import ch_timedisc as ch
 
 
 # Define material parameters
-parameters: ch.Parameters = ch.Parameters()
+parameters: ch.Parameters = ch.Parameters(num_time_steps=20)
 
 # Double well
 doublewell: ch.DoubleWell = ch.DoubleWell()
@@ -74,19 +74,16 @@ output_path = output_dir / "ch_implicit_random_e_m5.xdmf"
 output_file_pf = XDMFFile(MPI.COMM_WORLD, str(output_path), "w")
 output_file_pf.write_mesh(msh)
 
-print(type(output_file_pf))
-
-sys.exit()
 
 # Time stepping
-t: float = parameters.t0
-adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStep(
-    energy=energy,
-    femhandler=femhandler,
-    variational_form=imp_euler,
-    parameters=parameters,
-    verbose=True,
-)
+# t: float = parameters.t0
+# adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStep(
+#     energy=energy,
+#     femhandler=femhandler,
+#     variational_form=imp_euler,
+#     parameters=parameters,
+#     verbose=True,
+# )
 
 
 # Set up time marching
@@ -95,7 +92,6 @@ time_marching: ch.TimeMarching = ch.TimeMarching(
     parameters=parameters,
     energy=energy,
     problem=problem,
-    adaptive_time_step=adaptive_time_step,
     viz=viz,
     # output_file = output_file_pf,
 )
@@ -119,21 +115,14 @@ plt.rcParams["font.size"] = 16
 plt.figure("dt Energy")
 plt.plot(
     time_marching.time_vec[2:],
-    energy.energy_dt_vec()[1:],
+    energy.dt_energy_vec[1:],
     label=r"$\partial_t\mathcal{E}$",
 )
-plt.plot(
-    time_marching.time_vec[2:],
-    energy.gradmu_squared_vec[2:],
-    label=r"$-m\|\nabla\mu\|^2$",
-)
 
-plt.legend()
+plt.figure("Energy")
+plt.plot(time_marching.time_vec[1:], energy.energy_vec[1:])
 
-plt.figure("dte - mnmu^2")
-plt.plot(
-    time_marching.time_vec[2:],
-    np.array(energy.energy_dt_vec()[1:]) - np.array(energy.gradmu_squared_vec[2:]),
-)
+plt.figure("ddt Energy")
+plt.plot(time_marching.time_vec[3:], energy.ddt_energy_vec[1:])
 plt.show()
 # output_file_pf.close()

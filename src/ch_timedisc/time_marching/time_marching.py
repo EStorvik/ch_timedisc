@@ -106,7 +106,7 @@ class TimeMarching:
                 print(f"WARNING: Newton solver did not converge at time step {i}")
 
             # Update and track energy
-            self.energy(self.femhandler.pf, self.femhandler.mu)
+            self.energy()
 
             # Adaptive time-stepping
             if self.adaptive_time_step is not None:

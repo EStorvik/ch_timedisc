@@ -51,10 +51,41 @@ class Energy:
         self.mobility: float = parameters.mobility
         self.doublewell: "DoubleWell" = doublewell
         self.energy_vec: List[float] = []
+        self.dt_energy_vec: List[float] = []
+        self.ddt_energy_vec: List[float] = []
         self.gradmu_squared_vec: List[float] = []
-        pf0: PfType = femhandler.pf
-        mu0: PfType = femhandler.mu
-        self(pf0, mu0)
+        self.femhandler = femhandler
+        self()
+
+    def __call__(self) -> float:
+        """Compute and record the current energy and dissipation.
+
+        Returns:
+            The computed energy value at the current solution (tracked by femhandler).
+        """
+        pf = self.femhandler.pf
+        mu = self.femhandler.mu
+
+        # Compute energy and add to list
+        energy: float = assemble_scalar(form(self.energy(pf))).real
+        self.energy_vec.append(energy)
+
+        # Compute gradmu squared and add to list
+        self.gradmu_squared_vec.append(self.gradmu_squared(mu))
+
+        # Compute dt_E
+        if len(self.energy_vec) > 1:
+            self.dt_energy_vec.append(
+                (self.energy_vec[-1] - self.energy_vec[-2]) / self.parameters.dt
+            )
+
+        # Compute ddt_E
+        if len(self.dt_energy_vec) > 1:
+            self.ddt_energy_vec.append(
+                (self.dt_energy_vec[-1] - self.dt_energy_vec[-2]) / self.parameters.dt
+            )
+
+        return energy
 
     def energy(self, pf: PfType) -> Form:
         """Compute the Cahn-Hilliard free energy functional.
@@ -73,20 +104,20 @@ class Energy:
             + self.ell / 2 * inner(grad(pf), grad(pf))
         ) * dx
 
-    def __call__(self, pf: PfType, mu: PfType) -> float:
-        """Compute and record the current energy and dissipation.
+    def gradmu_squared(self, mu: PfType) -> float:
+        """Compute the squared gradient of chemical potential (dissipation term).
+
+        This represents the energy dissipation rate in the Cahn-Hilliard equation.
 
         Args:
-            pf: Current phase field.
-            mu: Current chemical potential.
+            mu: Chemical potential.
 
         Returns:
-            The computed energy value.
+            Mobility-weighted squared gradient integral.
         """
-        energy: float = assemble_scalar(form(self.energy(pf))).real
-        self.energy_vec.append(energy)
-        self.gradmu_squared_vec.append(self.gradmu_squared(mu))
-        return energy
+        return (
+            -self.mobility * assemble_scalar(form(inner(grad(mu), grad(mu)) * dx)).real
+        )
 
     def dt_gradmusquared(self) -> float:
         """Compute the time derivative of squared gradient of chemical potential.
@@ -110,18 +141,3 @@ class Energy:
                 (self.energy_vec[i + 1] - self.energy_vec[i]) / self.parameters.dt
             )
         return energy_dt_vec
-
-    def gradmu_squared(self, mu: PfType) -> float:
-        """Compute the squared gradient of chemical potential (dissipation term).
-
-        This represents the energy dissipation rate in the Cahn-Hilliard equation.
-
-        Args:
-            mu: Chemical potential.
-
-        Returns:
-            Mobility-weighted squared gradient integral.
-        """
-        return (
-            -self.mobility * assemble_scalar(form(inner(grad(mu), grad(mu)) * dx)).real
-        )

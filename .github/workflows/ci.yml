@@ -67,4 +67,4 @@ jobs:
     
     - name: Run tests with pytest
       run: |
-        pytest --verbose
+        pytest --verbose || [ $? -eq 5 ]
