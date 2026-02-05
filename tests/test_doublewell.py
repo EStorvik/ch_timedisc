@@ -5,7 +5,13 @@ os.environ["FI_PROVIDER"] = "tcp"
 os.environ["MPICH_OFI_STARTUP_CONNECT"] = "0"
 
 import numpy as np
-from ch_timedisc.doublewell.doublewell import DoubleWell
+
+import pytest
+
+try:
+    from ch_timedisc.doublewell.doublewell import DoubleWell
+except ImportError:
+    pytest.skip("dolfinx not available", allow_module_level=True)
 
 
 class TestDoubleWell:

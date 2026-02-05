@@ -9,8 +9,6 @@ os.environ["MPICH_OFI_STARTUP_CONNECT"] = "0"
 import numpy as np
 import pytest
 
-import ch_timedisc as ch
-from ch_timedisc.intital_conditions.initial_pf import initial_pf
 
 try:
     from mpi4py import MPI
@@ -18,6 +16,10 @@ try:
     from dolfinx.fem import functionspace, Function
     from basix.ufl import element
     from ufl import as_ufl
+    from ch_timedisc.intital_conditions.initial_pf import initial_pf
+    import ch_timedisc as ch
+
+
 except ImportError:
     pytest.skip("dolfinx not available", allow_module_level=True)
 

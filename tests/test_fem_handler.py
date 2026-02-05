@@ -9,12 +9,13 @@ os.environ["MPICH_OFI_STARTUP_CONNECT"] = "0"
 import numpy as np
 import pytest
 
-from ch_timedisc import DoubleWell, Parameters
 
 try:
     from mpi4py import MPI
     from dolfinx.mesh import create_unit_square
     from ch_timedisc.fem import FEMHandler
+    from ch_timedisc import DoubleWell, Parameters
+
 except ImportError:
     pytest.skip("dolfinx not available", allow_module_level=True)
 

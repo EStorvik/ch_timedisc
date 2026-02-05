@@ -5,8 +5,12 @@ os.environ["FI_PROVIDER"] = "tcp"
 os.environ["MPICH_OFI_STARTUP_CONNECT"] = "0"
 
 import numpy as np
+import pytest
 
-from ch_timedisc.intital_conditions.cross import Cross2D, Cross3D
+try:
+    from ch_timedisc.intital_conditions.cross import Cross2D, Cross3D
+except ImportError:
+    pytest.skip("dolfinx not available", allow_module_level=True)
 
 
 def test_cross2d_indicator_values():
