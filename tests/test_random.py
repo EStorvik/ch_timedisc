@@ -3,7 +3,10 @@
 import numpy as np
 import pytest
 
-from ch_timedisc.intital_conditions.random import Random
+try:
+    from ch_timedisc.intital_conditions.random import Random
+except ImportError:
+    pytest.skip("dolfinx not available", allow_module_level=True)
 
 
 @pytest.fixture
