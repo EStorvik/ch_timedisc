@@ -10,7 +10,7 @@ import ch_timedisc as ch
 from dolfinx.fem.petsc import NonlinearProblem
 
 if TYPE_CHECKING:
-    from ch_timedisc.visualization import Energy
+    from ch_timedisc.energy import Energy
     from ch_timedisc.fem import FEMHandler
     from ch_timedisc.parameters import Parameters
     from ch_timedisc.variational_forms import VariationalForm

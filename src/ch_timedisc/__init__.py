@@ -8,7 +8,7 @@ from .intital_conditions.random import Random
 from .intital_conditions.initial_mu import initial_mu
 from .intital_conditions.initial_pf import initial_pf
 from .visualization.pyvista_visualization import PyvistaVizualization
-from .visualization.energy import Energy
+from .energy.energy import Energy
 from .variational_forms.base import VariationalForm
 from .variational_forms.eyre import VariationalEyre
 from .variational_forms.implicit_euler import VariationalImplicitEuler

@@ -6,10 +6,10 @@ if TYPE_CHECKING:
     from ch_timedisc.fem import FEMHandler
     from ch_timedisc.parameters import Parameters
     from ch_timedisc.visualization import (
-        Energy,
         PyvistaVizualization,
         PyvistaVizualization3D,
     )
+    from ch_timedisc.energy import Energy
     from ch_timedisc.time_marching import AdaptiveTimeStep
     from dolfinx.fem.petsc import NonlinearProblem
     from dolfinx.io.utils import XDMFFile
