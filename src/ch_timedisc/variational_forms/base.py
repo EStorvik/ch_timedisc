@@ -1,9 +1,9 @@
 """Base class for variational forms in Cahn-Hilliard equation discretizations."""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any
 
-from ufl import dx, inner, grad
+from ufl import Form, dx, inner, grad
 
 if TYPE_CHECKING:
     from ch_timedisc.fem import FEMHandler
@@ -49,11 +49,11 @@ class VariationalForm(ABC):
 
     def _build_forms(self) -> None:
         """Build all variational forms."""
-        self.F_pf = self._build_F_pf()
-        self.F_mu = self._build_F_mu()
-        self.F = self.F_pf + self.F_mu
+        self.F_pf: Form = self._build_F_pf()
+        self.F_mu: Form = self._build_F_mu()
+        self.F: Form = self.F_pf + self.F_mu
 
-    def _build_F_pf(self):
+    def _build_F_pf(self) -> Form:
         """Build phase field variational form (identical for all schemes)."""
         f = self.femhandler
         p = self.parameters
@@ -64,7 +64,7 @@ class VariationalForm(ABC):
         )
 
     @abstractmethod
-    def _build_F_mu(self):
+    def _build_F_mu(self) -> Form:
         """Build chemical potential variational form (scheme-specific).
 
         This method must be implemented by subclasses to define the specific

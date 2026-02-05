@@ -1,6 +1,6 @@
 """Phase field smoothing from initial condition."""
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import ch_timedisc as ch
 from ufl import grad, inner
@@ -57,6 +57,6 @@ def initial_pf(
             "ksp_error_if_not_converged": True,
         },
     )
-    pf = problem.solve()
+    pf = cast(Function, problem.solve())
 
     return pf

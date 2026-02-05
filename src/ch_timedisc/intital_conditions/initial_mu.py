@@ -1,6 +1,6 @@
 """Chemical potential initialization from phase field. This is actually not needed."""
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import ch_timedisc as ch
 from ufl import grad, inner
@@ -64,6 +64,6 @@ def initial_mu(
             "ksp_error_if_not_converged": True,
         },
     )
-    mu0 = problem.solve()
+    mu0 = cast(Function, problem.solve())
 
     return mu0

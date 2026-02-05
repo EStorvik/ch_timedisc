@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from ch_timedisc.visualization import Energy
     from ch_timedisc.fem import FEMHandler
     from ch_timedisc.parameters import Parameters
+    from ch_timedisc.variational_forms import VariationalForm
 
 
 class AdaptiveTimeStep:
@@ -75,7 +76,7 @@ class AdaptiveTimeStep:
         energy: "Energy",
         femhandler: "FEMHandler",
         parameters: "Parameters",
-        variational_form: Any,
+        variational_form: "VariationalForm",
         verbose: bool = False,
     ) -> None:
         """Initialize the adaptive time step controller.
@@ -91,7 +92,7 @@ class AdaptiveTimeStep:
         self.energy: "Energy" = energy
         self.parameters: "Parameters" = parameters
         self.femhandler: "FEMHandler" = femhandler
-        self.variational_form: Any = variational_form
+        self.variational_form: "VariationalForm" = variational_form
 
     def __call__(self) -> NonlinearProblem:
         """Adapt the time step based on the current solution state.

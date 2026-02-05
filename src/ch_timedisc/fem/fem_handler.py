@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable
 from basix.ufl import element, mixed_element
 from dolfinx.fem import Function, functionspace
 from dolfinx.fem.function import FunctionSpace
-from ufl import split, TestFunction
+from ufl import Argument, split, TestFunction
 from ufl.core.expr import Expr as UFLExpr
 import ch_timedisc as ch
 
@@ -60,7 +60,7 @@ class FEMHandler:
         self.V: FunctionSpace = functionspace(msh, ME)
 
         # Test function on mixed space
-        self.eta: TestFunction = TestFunction(self.V)
+        self.eta: Argument = TestFunction(self.V)
         self.eta_pf: UFLExpr
         self.eta_mu: UFLExpr
         self.eta_pf, self.eta_mu = split(self.eta)

@@ -65,12 +65,12 @@ class Parameters:
         self.tol: float = tol
         self.max_iter: int = max_iter
 
-        use_superlu = PETSc.IntType == np.int64  # or PETSc.ScalarType == np.complex64
+        # Determine linear solver based on available PETSc packages
         sys = PETSc.Sys()  # type: ignore
-        if sys.hasExternalPackage("mumps") and not use_superlu:
-            linear_solver = "mumps"
-        elif sys.hasExternalPackage("superlu_dist"):
+        if sys.hasExternalPackage("superlu_dist"):
             linear_solver = "superlu_dist"
+        elif sys.hasExternalPackage("mumps"):
+            linear_solver = "mumps"
         else:
             linear_solver = "petsc"
         self.petsc_options: Dict[str, Any] = {

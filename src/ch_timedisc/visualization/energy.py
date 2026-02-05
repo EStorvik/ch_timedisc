@@ -1,8 +1,19 @@
 """Energy tracking and analysis for Cahn-Hilliard simulations."""
 
+from typing import TYPE_CHECKING, List, Union
+
 import ch_timedisc as ch
-from ufl import dx, grad, inner, Measure
-from dolfinx.fem import assemble_scalar, form
+from ufl import Form, dx, grad, inner, Measure
+from dolfinx.fem import assemble_scalar, form, Function
+
+if TYPE_CHECKING:
+    from ch_timedisc.fem import FEMHandler
+    from ch_timedisc.parameters import Parameters
+    from ch_timedisc.doublewell import DoubleWell
+    from ufl.core.expr import Expr as UFLExpr
+    import numpy as np
+
+PfType = Union[float, "np.ndarray", "Function", "UFLExpr"]
 
 
 class Energy:
@@ -24,87 +35,93 @@ class Energy:
 
     def __init__(
         self,
-        femhandler: ch.FEMHandler,
-        parameters: ch.Parameters,
-        doublewell: ch.DoubleWell,
-    ):
+        femhandler: "FEMHandler",
+        parameters: "Parameters",
+        doublewell: "DoubleWell",
+    ) -> None:
         """Initialize the energy tracker.
 
         Args:
-            pf0 (Function): Initial phase field.
-            mu0 (Function): Initial chemical potential.
-            parameters (Parameters): Simulation parameters containing ell, dt, mobility.
-            doublewell (DoubleWell): Double well potential object.
+            femhandler: Finite element handler with solution variables.
+            parameters: Simulation parameters containing ell, dt, mobility.
+            doublewell: Double well potential object.
         """
-        self.ell = parameters.ell
-        self.parameters = parameters
-        self.mobility = parameters.mobility
-        self.doublewell = doublewell
-        self.energy_vec = []
-        self.gradmu_squared_vec = []
-        pf0 = femhandler.pf
-        mu0 = femhandler.mu
+        self.ell: float = parameters.ell
+        self.parameters: "Parameters" = parameters
+        self.mobility: float = parameters.mobility
+        self.doublewell: "DoubleWell" = doublewell
+        self.energy_vec: List[float] = []
+        self.gradmu_squared_vec: List[float] = []
+        pf0: PfType = femhandler.pf
+        mu0: PfType = femhandler.mu
         self(pf0, mu0)
 
-    def energy(self, pf):
+    def energy(self, pf: PfType) -> Form:
         """Compute the Cahn-Hilliard free energy functional.
 
         The energy consists of the bulk free energy (double well potential)
         and the gradient energy (interface energy).
 
         Args:
-            pf (Function): Phase field function.
+            pf: Phase field function.
 
         Returns:
-            ufl.Form: The energy form to be assembled.
+            The energy form to be assembled.
         """
         return (
             1 / self.ell * self.doublewell(pf)
             + self.ell / 2 * inner(grad(pf), grad(pf))
         ) * dx
 
-    def __call__(self, pf, mu):
+    def __call__(self, pf: PfType, mu: PfType) -> float:
         """Compute and record the current energy and dissipation.
 
         Args:
-            pf (Function): Current phase field.
-            mu (Function): Current chemical potential.
+            pf: Current phase field.
+            mu: Current chemical potential.
 
         Returns:
-            float: The computed energy value.
+            The computed energy value.
         """
-        energy = assemble_scalar(form(self.energy(pf)))
+        energy: float = assemble_scalar(form(self.energy(pf))).real
         self.energy_vec.append(energy)
         self.gradmu_squared_vec.append(self.gradmu_squared(mu))
         return energy
 
-    def dt_gradmusquared(self):
+    def dt_gradmusquared(self) -> float:
+        """Compute the time derivative of squared gradient of chemical potential.
+
+        Returns:
+            Time rate of change of squared gradient.
+        """
         return (
             self.gradmu_squared_vec[-1] - self.gradmu_squared_vec[-2]
         ) / self.parameters.dt
 
-    def energy_dt_vec(self):
+    def energy_dt_vec(self) -> List[float]:
         """Compute the discrete time derivative of energy.
 
         Returns:
-            list: Time derivative of energy at each step (dE/dt).
+            Time derivative of energy at each step (dE/dt).
         """
-        energy_dt_vec = []
+        energy_dt_vec: List[float] = []
         for i in range(len(self.energy_vec) - 1):
             energy_dt_vec.append(
                 (self.energy_vec[i + 1] - self.energy_vec[i]) / self.parameters.dt
             )
         return energy_dt_vec
 
-    def gradmu_squared(self, mu):
+    def gradmu_squared(self, mu: PfType) -> float:
         """Compute the squared gradient of chemical potential (dissipation term).
 
         This represents the energy dissipation rate in the Cahn-Hilliard equation.
 
         Args:
-            mu (Function): Chemical potential.
+            mu: Chemical potential.
 
         Returns:
-            float: Mobility-weighted squared gradient integral.
+            Mobility-weighted squared gradient integral.
         """
-        return -self.mobility * assemble_scalar(form(inner(grad(mu), grad(mu)) * dx))
+        return (
+            -self.mobility * assemble_scalar(form(inner(grad(mu), grad(mu)) * dx)).real
+        )

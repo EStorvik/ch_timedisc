@@ -1,7 +1,7 @@
 """PyVista-based visualization for FEniCSx solutions."""
 
 import pyvista as pv
-import pyvistaqt as pvqt
+import pyvistaqt as pvqt  # type: ignore[import-untyped]
 from dolfinx import plot
 
 if pv.OFF_SCREEN:

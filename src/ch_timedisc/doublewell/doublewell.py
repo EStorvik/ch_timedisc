@@ -85,7 +85,7 @@ class DoubleWell:
         """
         return self.scaling * (-12 + 24 * pf)
 
-    def quadprime(self) -> float:
+    def quadprime(self, pf: PfType) -> float:
         """
         Evaluate the quadruple derivative of the double well potential.
 

@@ -1,6 +1,6 @@
 """Eyre time discretization variational forms for Cahn-Hilliard equation."""
 
-from ufl import dx, inner, grad
+from ufl import Form, dx, inner, grad
 
 from .base import VariationalForm
 
@@ -24,7 +24,7 @@ class VariationalEyre(VariationalForm):
         F (ufl.Form): Complete variational form (F_pf + F_mu).
     """
 
-    def _build_F_mu(self):
+    def _build_F_mu(self) -> Form:
         """Build chemical potential form using convex-concave splitting.
 
         The Eyre scheme decouples the system by using the convex part of the

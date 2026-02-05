@@ -1,6 +1,6 @@
 """Crank-Nicholson time discretization variational forms for Cahn-Hilliard equation."""
 
-from ufl import dx, inner, grad
+from ufl import Form, dx, inner, grad
 
 from .base import VariationalForm
 
@@ -24,7 +24,7 @@ class VariationalCrankNicholson(VariationalForm):
         F (ufl.Form): Complete variational form (F_pf + F_mu).
     """
 
-    def _build_F_mu(self):
+    def _build_F_mu(self) -> Form:
         """Build chemical potential form using symmetric averaging (midpoint).
 
         The scheme uses symmetric averages (midpoint evaluations) of the Laplacian
