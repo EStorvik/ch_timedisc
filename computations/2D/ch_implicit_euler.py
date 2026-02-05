@@ -65,11 +65,15 @@ viz = ch.visualization.PyvistaVizualization(
 )
 
 # Output file (absolute path under computations/output)
-# output_dir = Path(__file__).resolve().parent.parent / "output"
-# output_dir.mkdir(parents=True, exist_ok=True)
-# output_path = output_dir / "ch_implicit_random_e_m5.xdmf"
-# output_file_pf = XDMFFile(MPI.COMM_WORLD, str(output_path), "w")
-# output_file_pf.write_mesh(msh)
+output_dir = Path(__file__).resolve().parent.parent / "output"
+output_dir.mkdir(parents=True, exist_ok=True)
+output_path = output_dir / "ch_implicit_random_e_m5.xdmf"
+output_file_pf = XDMFFile(MPI.COMM_WORLD, str(output_path), "w")
+output_file_pf.write_mesh(msh)
+
+print(type(output_file_pf))
+
+sys.exit()
 
 # Time stepping
 t = parameters.t0

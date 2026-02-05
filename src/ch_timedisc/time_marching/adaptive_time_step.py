@@ -4,8 +4,15 @@ This module provides adaptive time step control based on the gradient of the
 chemical potential, ensuring numerical stability and computational efficiency.
 """
 
+from typing import TYPE_CHECKING, Any
+
 import ch_timedisc as ch
 from dolfinx.fem.petsc import NonlinearProblem
+
+if TYPE_CHECKING:
+    from ch_timedisc.visualization import Energy
+    from ch_timedisc.fem import FEMHandler
+    from ch_timedisc.parameters import Parameters
 
 
 class AdaptiveTimeStep:
@@ -65,19 +72,28 @@ class AdaptiveTimeStep:
 
     def __init__(
         self,
-        energy: ch.Energy,
-        femhandler: ch.FEMHandler,
-        parameters: ch.Parameters,
-        variational_form,
-        verbose=False,
-    ):
-        self.verbose = verbose
-        self.energy = energy
-        self.parameters = parameters
-        self.femhandler = femhandler
-        self.variational_form = variational_form
+        energy: "Energy",
+        femhandler: "FEMHandler",
+        parameters: "Parameters",
+        variational_form: Any,
+        verbose: bool = False,
+    ) -> None:
+        """Initialize the adaptive time step controller.
 
-    def __call__(self):
+        Args:
+            energy: Energy object that computes energy-related quantities.
+            femhandler: Finite element handler with solution variables.
+            parameters: Parameters object containing simulation parameters.
+            variational_form: Variational form object for updating the problem.
+            verbose: Enable printing of time step updates. Defaults to False.
+        """
+        self.verbose: bool = verbose
+        self.energy: "Energy" = energy
+        self.parameters: "Parameters" = parameters
+        self.femhandler: "FEMHandler" = femhandler
+        self.variational_form: Any = variational_form
+
+    def __call__(self) -> NonlinearProblem:
         """Adapt the time step based on the current solution state.
 
         Evaluates dt * ||∇μ||² and adjusts the time step size accordingly:
@@ -86,6 +102,9 @@ class AdaptiveTimeStep:
         - Otherwise: keeps the time step unchanged
 
         The time step size in self.parameters.dt is modified in-place.
+
+        Returns:
+            Updated nonlinear problem for the next time step.
 
         Notes
         -----
@@ -107,7 +126,12 @@ class AdaptiveTimeStep:
 
         return problem
 
-    def update_problem(self):
+    def update_problem(self) -> NonlinearProblem:
+        """Update the nonlinear problem with the current parameters.
+
+        Returns:
+            Updated nonlinear problem with the current time step.
+        """
         self.variational_form.update(self.parameters)
 
         # Set up nonlinear problem

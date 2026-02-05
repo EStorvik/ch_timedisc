@@ -2,8 +2,10 @@
 
 from ufl import dx, inner, grad
 
+from .base import VariationalForm
 
-class VariationalEyre:
+
+class VariationalEyre(VariationalForm):
     """Eyre time discretization scheme for the Cahn-Hilliard equation.
 
     The Eyre scheme is an energy stable, first-order time discretization that
@@ -22,37 +24,26 @@ class VariationalEyre:
         F (ufl.Form): Complete variational form (F_pf + F_mu).
     """
 
-    def __init__(self, femhandler, parameters, doublewell):
-        """Initialize Eyre variational forms.
+    def _build_F_mu(self):
+        """Build chemical potential form using convex-concave splitting.
 
         The Eyre scheme decouples the system by using the convex part of the
         potential derivative (cprime) at the current time and the concave part
         (eprime) at the previous time, ensuring energy stability.
 
-        Args:
-            femhandler (FEMHandler): Finite element handler with spaces and functions.
-            parameters (Parameters): Simulation parameters (dt, gamma, ell, mobility).
-            doublewell (DoubleWell): Double well potential with cprime and eprime.
+        Returns:
+            UFL form for the chemical potential equation.
         """
-        f = femhandler
-        p = parameters
-
-        # Phase field equation: time discretization with decoupled mobility
-        self.F_pf = (
-            inner(f.pf - f.pf_old, f.eta_pf) * dx
-            + p.dt * p.mobility * inner(grad(f.mu), grad(f.eta_pf)) * dx
-        )
+        f = self.femhandler
+        p = self.parameters
 
         # Chemical potential equation with convex-concave split
         # mu = -gamma*ell*Δpf + (gamma/ell)*(cprime(pf_n) - eprime(pf_n-1))
-        self.F_mu = (
+        return (
             inner(f.mu, f.eta_mu) * dx
             - p.gamma * p.ell * inner(grad(f.pf), grad(f.eta_mu)) * dx
             - (p.gamma / p.ell)
-            * (doublewell.cprime(f.pf) - doublewell.eprime(f.pf_old))
+            * (self.doublewell.cprime(f.pf) - self.doublewell.eprime(f.pf_old))
             * f.eta_mu
             * dx
         )
-
-        # Combined variational form for nonlinear solver
-        self.F = self.F_pf + self.F_mu

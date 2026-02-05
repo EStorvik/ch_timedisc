@@ -9,6 +9,7 @@ from .intital_conditions.initial_mu import initial_mu
 from .intital_conditions.initial_pf import initial_pf
 from .visualization.pyvista_visualization import PyvistaVizualization
 from .visualization.energy import Energy
+from .variational_forms.base import VariationalForm
 from .variational_forms.eyre import VariationalEyre
 from .variational_forms.implicit_euler import VariationalImplicitEuler
 from .variational_forms.accurate_dissipation import VariationalAccurateDissipation
@@ -25,6 +26,7 @@ __all__ = [
     "PyvistaVizualization",
     "Energy",
     "FEMHandler",
+    "VariationalForm",
     "VariationalEyre",
     "VariationalImplicitEuler",
     "VariationalAccurateDissipation",

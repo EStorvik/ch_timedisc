@@ -1,31 +1,35 @@
 """Random initial condition generator."""
 
+from typing import Optional
+
 import numpy as np
 
 
 class Random:
     """Random initial condition generator for phase field values."""
 
-    def __init__(self, mean=0.5, std=0.1, seed=None):
+    def __init__(
+        self, mean: float = 0.5, std: float = 0.1, seed: Optional[int] = None
+    ) -> None:
         """Initialize random initial condition.
 
         Args:
-            mean (float): Mean value for random distribution.
-            std (float): Standard deviation for random distribution.
-            seed (int, optional): Random seed for reproducibility.
+            mean: Mean value for random distribution. Default: 0.5
+            std: Standard deviation for random distribution. Default: 0.1
+            seed: Random seed for reproducibility. Default: None
         """
-        self.mean = mean
-        self.std = std
-        self.seed = seed
+        self.mean: float = mean
+        self.std: float = std
+        self.seed: Optional[int] = seed
 
-    def __call__(self, x):
+    def __call__(self, x: np.ndarray) -> np.ndarray:
         """Generate random values for given points.
 
         Args:
-            x (np.ndarray): Array of shape (d, n) with n points in d dimensions.
+            x: Array of shape (d, n) with n points in d dimensions.
 
         Returns:
-            np.ndarray: Random values clipped to [0, 1].
+            Random values clipped to [0, 1].
         """
         if self.seed is not None:
             np.random.seed(self.seed)

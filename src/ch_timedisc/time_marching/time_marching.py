@@ -1,5 +1,19 @@
 """Time stepping and simulation control for Cahn-Hilliard equations."""
 
+from typing import TYPE_CHECKING, List, Optional, Union
+
+if TYPE_CHECKING:
+    from ch_timedisc.fem import FEMHandler
+    from ch_timedisc.parameters import Parameters
+    from ch_timedisc.visualization import (
+        Energy,
+        PyvistaVizualization,
+        PyvistaVizualization3D,
+    )
+    from ch_timedisc.time_marching import AdaptiveTimeStep
+    from dolfinx.fem.petsc import NonlinearProblem
+    from dolfinx.io.utils import XDMFFile
+
 
 class TimeMarching:
     """Manages time stepping and simulation evolution for Cahn-Hilliard problems.
@@ -23,37 +37,40 @@ class TimeMarching:
 
     def __init__(
         self,
-        femhandler,
-        parameters,
-        energy,
-        problem,
-        adaptive_time_step=None,
-        verbose=False,
-        viz=None,
-        output_file=None,
-    ):
+        femhandler: "FEMHandler",
+        parameters: "Parameters",
+        energy: "Energy",
+        problem: "NonlinearProblem",
+        adaptive_time_step: Optional["AdaptiveTimeStep"] = None,
+        verbose: bool = False,
+        viz: Optional[Union["PyvistaVizualization", "PyvistaVizualization3D"]] = None,
+        output_file: Optional["XDMFFile"] = None,
+    ) -> None:
         """Initialize the time marching controller.
 
         Args:
-            femhandler (FEMHandler): Finite element handler with spaces and functions.
-            parameters (Parameters): Simulation parameters object.
-            energy (Energy): Energy tracker object.
-            problem (NonlinearProblem): Nonlinear problem from FEniCSx.
-            verbose (bool, optional): Print convergence info. Defaults to False.
-            viz (Visualization, optional): Visualization object for updates.
-                Defaults to None (no visualization).
+            femhandler: Finite element handler with spaces and functions.
+            parameters: Simulation parameters object.
+            energy: Energy tracker object.
+            problem: Nonlinear problem from FEniCSx.
+            adaptive_time_step: Adaptive time stepping controller. Defaults to None.
+            verbose: Print convergence info. Defaults to False.
+            viz: Visualization object for updates. Defaults to None (no visualization).
+            output_file: Output file handler for saving results. Defaults to None.
         """
-        self.femhandler = femhandler
-        self.parameters = parameters
-        self.energy = energy
-        self.problem = problem
-        self.verbose = verbose
-        self.viz = viz
-        self.adaptive_time_step = adaptive_time_step
-        self.time_vec = []
-        self.output_file = output_file
+        self.femhandler: "FEMHandler" = femhandler
+        self.parameters: "Parameters" = parameters
+        self.energy: "Energy" = energy
+        self.problem: "NonlinearProblem" = problem
+        self.adaptive_time_step: Optional["AdaptiveTimeStep"] = adaptive_time_step
+        self.verbose: bool = verbose
+        self.viz: Optional[Union["PyvistaVizualization", "PyvistaVizualization3D"]] = (
+            viz
+        )
+        self.time_vec: List[float] = []
+        self.output_file: Optional["XDMFFile"] = output_file
 
-    def __call__(self):
+    def __call__(self) -> List[float]:
         """Execute the time stepping loop and return time vector.
 
         Performs the main simulation loop:
@@ -64,7 +81,7 @@ class TimeMarching:
         - Monitors solver convergence
 
         Returns:
-            list: Time values at each time step.
+            Time values at each time step.
         """
         # Time stepping
         t = self.parameters.t0
@@ -107,3 +124,5 @@ class TimeMarching:
             if self.output_file is not None:
                 pf_out, _ = self.femhandler.xi.split()
                 self.output_file.write_function(pf_out, t)
+
+        return self.time_vec

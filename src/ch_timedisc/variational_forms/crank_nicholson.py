@@ -2,8 +2,10 @@
 
 from ufl import dx, inner, grad
 
+from .base import VariationalForm
 
-class VariationalCrankNicholson:
+
+class VariationalCrankNicholson(VariationalForm):
     """Crank-Nicholson time discretization scheme for the Cahn-Hilliard equation.
 
     The Crank-Nicholson scheme is a second-order, energy stable time discretization
@@ -22,31 +24,24 @@ class VariationalCrankNicholson:
         F (ufl.Form): Complete variational form (F_pf + F_mu).
     """
 
-    def __init__(self, femhandler, parameters, doublewell):
-        """Initialize Crank-Nicholson variational forms.
+    def _build_F_mu(self):
+        """Build chemical potential form using symmetric averaging (midpoint).
 
         The scheme uses symmetric averages (midpoint evaluations) of the Laplacian
         and potential derivative between current and previous time steps. This
         approach is second-order accurate in time and maintains energy stability
         properties.
 
-        Args:
-            femhandler (FEMHandler): Finite element handler with spaces and functions.
-            parameters (Parameters): Simulation parameters (dt, gamma, ell, mobility).
-            doublewell (DoubleWell): Double well potential with derivative methods.
+        Returns:
+            UFL form for the chemical potential equation.
         """
-        f = femhandler
-        p = parameters
+        f = self.femhandler
+        p = self.parameters
 
-        # Phase field equation: time discretization with decoupled mobility
-        self.F_pf = (
-            inner(f.pf - f.pf_old, f.eta_pf) * dx
-            + p.dt * p.mobility * inner(grad(f.mu), grad(f.eta_pf)) * dx
-        )
         # Chemical potential equation with Crank-Nicholson symmetric averaging
         # Uses midpoint evaluation: 0.5*(value_n + value_n-1)
         # mu = -gamma*ell*0.5*(Δpf_n + Δpf_n-1) + (gamma/ell)*0.5*(f'(pf_n) + f'(pf_n-1))
-        self.F_mu = (
+        return (
             inner(f.mu, f.eta_mu) * dx
             - 0.5
             * p.gamma
@@ -56,10 +51,7 @@ class VariationalCrankNicholson:
             - 0.5
             * p.gamma
             / p.ell
-            * (doublewell.prime(f.pf) + doublewell.prime(f.pf_old))
+            * (self.doublewell.prime(f.pf) + self.doublewell.prime(f.pf_old))
             * f.eta_mu
             * dx
         )
-
-        # Combined variational form for nonlinear solver
-        self.F = self.F_pf + self.F_mu
