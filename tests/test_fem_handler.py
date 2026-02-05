@@ -10,11 +10,11 @@ import numpy as np
 import pytest
 
 from ch_timedisc import DoubleWell, Parameters
-from ch_timedisc.fem import FEMHandler
 
 try:
     from mpi4py import MPI
     from dolfinx.mesh import create_unit_square
+    from ch_timedisc.fem import FEMHandler
 except ImportError:
     pytest.skip("dolfinx not available", allow_module_level=True)
 
