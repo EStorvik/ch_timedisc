@@ -9,6 +9,7 @@ from basix.ufl import element, mixed_element
 from dolfinx import mesh, default_real_type
 from dolfinx.fem import Function, functionspace, assemble_scalar, form
 from dolfinx.fem.petsc import NonlinearProblem
+from dolfinx.mesh import Mesh
 from petsc4py import PETSc
 
 from dolfinx.io import XDMFFile
@@ -23,40 +24,44 @@ import ch_timedisc as ch
 
 
 # Define material parameters
-parameters = ch.Parameters()
+parameters: ch.Parameters = ch.Parameters()
 
 # Double well
-doublewell = ch.DoubleWell()
+doublewell: ch.DoubleWell = ch.DoubleWell()
 
 # Mesh
-msh = mesh.create_unit_square(
+msh: Mesh = mesh.create_unit_square(
     MPI.COMM_WORLD, parameters.nx, parameters.ny, cell_type=mesh.CellType.triangle
 )
 
 
 # Initial conditions
 # initialcondition = ch.Cross2D(width=0.3)
-initialcondition = ch.Random()
+initialcondition: ch.Random = ch.Random()
 
 
 # FEM handler
-femhandler = ch.FEMHandler(
+femhandler: ch.FEMHandler = ch.FEMHandler(
     msh=msh,
     initialcondition=initialcondition,
     parameters=parameters,
     doublewell=doublewell,
 )
 
-energy = ch.Energy(femhandler=femhandler, parameters=parameters, doublewell=doublewell)
+energy: ch.Energy = ch.Energy(
+    femhandler=femhandler, parameters=parameters, doublewell=doublewell
+)
 
 # Linear variational forms
-accurate_dissipation = ch.VariationalAccurateDissipation(
-    femhandler=femhandler, parameters=parameters, doublewell=doublewell
+accurate_dissipation: ch.VariationalAccurateDissipation = (
+    ch.VariationalAccurateDissipation(
+        femhandler=femhandler, parameters=parameters, doublewell=doublewell
+    )
 )
 
 
 # Set up nonlinear problem
-problem = NonlinearProblem(
+problem: NonlinearProblem = NonlinearProblem(
     accurate_dissipation.F,
     femhandler.xi,
     petsc_options_prefix="ch_implicit_",
@@ -64,7 +69,7 @@ problem = NonlinearProblem(
 )
 
 # Pyvista plot
-viz = ch.visualization.PyvistaVizualization(
+viz: ch.PyvistaVizualization = ch.PyvistaVizualization(
     femhandler.V.sub(0), femhandler.xi.sub(0), 0.0
 )
 
@@ -73,7 +78,7 @@ viz = ch.visualization.PyvistaVizualization(
 # output_file_pf.write_mesh(msh)
 
 # Time stepping
-time_marching = ch.TimeMarching(
+time_marching: ch.TimeMarching = ch.TimeMarching(
     femhandler=femhandler,
     parameters=parameters,
     energy=energy,

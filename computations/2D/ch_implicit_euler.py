@@ -8,6 +8,8 @@ import sys
 
 from dolfinx import mesh
 from dolfinx.fem.petsc import NonlinearProblem
+from dolfinx.mesh import Mesh
+from typing import Optional
 
 from dolfinx.io import XDMFFile
 import numpy as np
@@ -22,36 +24,38 @@ import ch_timedisc as ch
 
 
 # Define material parameters
-parameters = ch.Parameters()
+parameters: ch.Parameters = ch.Parameters()
 
 # Double well
-doublewell = ch.DoubleWell()
+doublewell: ch.DoubleWell = ch.DoubleWell()
 
 # Mesh
-msh = mesh.create_unit_square(
+msh: Mesh = mesh.create_unit_square(
     MPI.COMM_WORLD, parameters.nx, parameters.ny, cell_type=mesh.CellType.triangle
 )
 
 # Initial condition
 # initialcondition = ch.Cross2D(width=0.3)
-initialcondition = ch.Random(seed=42)
+initialcondition: ch.Random = ch.Random(seed=42)
 
 # Set up femhandler
-femhandler = ch.FEMHandler(
+femhandler: ch.FEMHandler = ch.FEMHandler(
     msh, initialcondition=initialcondition, parameters=parameters, doublewell=doublewell
 )
 
 
-energy = ch.Energy(femhandler=femhandler, parameters=parameters, doublewell=doublewell)
+energy: ch.Energy = ch.Energy(
+    femhandler=femhandler, parameters=parameters, doublewell=doublewell
+)
 
 # Linear variational forms
-imp_euler = ch.VariationalImplicitEuler(
+imp_euler: ch.VariationalImplicitEuler = ch.VariationalImplicitEuler(
     femhandler=femhandler, parameters=parameters, doublewell=doublewell
 )
 
 
 # Set up nonlinear problem
-problem = NonlinearProblem(
+problem: NonlinearProblem = NonlinearProblem(
     imp_euler.F,
     femhandler.xi,
     petsc_options_prefix="ch_implicit_",
@@ -60,7 +64,7 @@ problem = NonlinearProblem(
 
 
 # Pyvista plot
-viz = ch.visualization.PyvistaVizualization(
+viz: ch.PyvistaVizualization = ch.PyvistaVizualization(
     femhandler.V.sub(0), femhandler.xi.sub(0), 0.0
 )
 
@@ -76,8 +80,8 @@ print(type(output_file_pf))
 sys.exit()
 
 # Time stepping
-t = parameters.t0
-adaptive_time_step = ch.AdaptiveTimeStep(
+t: float = parameters.t0
+adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStep(
     energy=energy,
     femhandler=femhandler,
     variational_form=imp_euler,
@@ -87,7 +91,7 @@ adaptive_time_step = ch.AdaptiveTimeStep(
 
 
 # Set up time marching
-time_marching = ch.TimeMarching(
+time_marching: ch.TimeMarching = ch.TimeMarching(
     femhandler=femhandler,
     parameters=parameters,
     energy=energy,

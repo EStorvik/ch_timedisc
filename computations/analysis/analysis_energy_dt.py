@@ -1,17 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import List
+from numpy.typing import NDArray
 
 
 # input_folder = "log/accurate_dissipation_test/"
-input_folder_e = "log/eyre_test/"
-input_folder_ie = "log/implicit_euler_test/"
+input_folder_e: str = "log/eyre_test/"
+input_folder_ie: str = "log/implicit_euler_test/"
 
 
 plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "serif"  # or 'sans-serif'
 plt.rcParams["font.size"] = 16
 
-line_styles = ["-", "--", ":", "-."]
+line_styles: List[str] = ["-", "--", ":", "-."]
 
 plt.figure()
 

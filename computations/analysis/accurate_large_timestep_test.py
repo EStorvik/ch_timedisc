@@ -6,6 +6,8 @@ os.environ["MPICH_OFI_STARTUP_CONNECT"] = "0"
 
 from dolfinx import mesh
 from dolfinx.fem.petsc import NonlinearProblem
+from dolfinx.mesh import Mesh
+from typing import Tuple, List
 
 from dolfinx.io import XDMFFile
 import numpy as np
@@ -17,31 +19,31 @@ import matplotlib.pyplot as plt
 import ch_timedisc as ch
 
 
-dts = [1e-5, 1e-4, 1e-3, 1e-2]
-T = 5e-2
+dts: List[float] = [1e-5, 1e-4, 1e-3, 1e-2]
+T: float = 5e-2
 
 
-def run_accurate(dt, T):
+def run_accurate(dt: float, T: float) -> Tuple[ch.Energy, ch.TimeMarching]:
 
-    num_time_steps = int(T / dt)
+    num_time_steps: int = int(T / dt)
     print(num_time_steps)
 
     # Define material parameters
-    parameters = ch.Parameters(dt=dt, num_time_steps=num_time_steps)
+    parameters: ch.Parameters = ch.Parameters(dt=dt, num_time_steps=num_time_steps)
 
     # Double well
-    doublewell = ch.DoubleWell()
+    doublewell: ch.DoubleWell = ch.DoubleWell()
 
     # Mesh
-    msh = mesh.create_unit_square(
+    msh: Mesh = mesh.create_unit_square(
         MPI.COMM_WORLD, parameters.nx, parameters.ny, cell_type=mesh.CellType.triangle
     )
 
     # Initial condition
-    initialcondition = ch.Cross2D(width=0.3)
+    initialcondition: ch.Cross2D = ch.Cross2D(width=0.3)
 
     # Set up femhandler
-    femhandler = ch.FEMHandler(
+    femhandler: ch.FEMHandler = ch.FEMHandler(
         msh,
         initialcondition=initialcondition,
         parameters=parameters,
@@ -49,17 +51,17 @@ def run_accurate(dt, T):
     )
 
     # Energy computations
-    energy = ch.Energy(
+    energy: ch.Energy = ch.Energy(
         femhandler=femhandler, parameters=parameters, doublewell=doublewell
     )
 
     # Linear variational form
-    accurate = ch.VariationalAccurateDissipation(
+    accurate: ch.VariationalAccurateDissipation = ch.VariationalAccurateDissipation(
         femhandler=femhandler, parameters=parameters, doublewell=doublewell
     )
 
     # Set up nonlinear problem
-    problem = NonlinearProblem(
+    problem: NonlinearProblem = NonlinearProblem(
         accurate.F,
         femhandler.xi,
         petsc_options_prefix="ch_accurate_" + f"dt_{dt}_",
@@ -67,7 +69,7 @@ def run_accurate(dt, T):
     )
 
     # Set up time marching
-    time_marching = ch.TimeMarching(
+    time_marching: ch.TimeMarching = ch.TimeMarching(
         femhandler=femhandler, parameters=parameters, energy=energy, problem=problem
     )
 
@@ -77,7 +79,7 @@ def run_accurate(dt, T):
     return energy, time_marching
 
 
-output_folder = "log/accurate_dissipation_test/"
+output_folder: str = "log/accurate_dissipation_test/"
 plt.figure("Energy")
 
 for i, dt in enumerate(dts):
@@ -88,7 +90,7 @@ for i, dt in enumerate(dts):
         "Energy": np.array(energy.energy_vec),
     }
 
-    np.savez(output_folder + f"dt_{i}.npz", **results)
+    np.savez(output_folder + f"dt_{i}.npz", **results)  # type: ignore[arg-type]
     plt.plot(time_marching.time_vec, energy.energy_vec, label=f"dt = {dt}")
 
 plt.legend()
