@@ -23,7 +23,7 @@ import ch_timedisc as ch
 
 
 # Define material parameters
-parameters: ch.Parameters = ch.Parameters(num_time_steps=20)
+parameters: ch.Parameters = ch.Parameters(num_time_steps=20, dt=1e-5)
 
 # Double well
 doublewell: ch.DoubleWell = ch.DoubleWell()
@@ -34,8 +34,8 @@ msh: Mesh = mesh.create_unit_square(
 )
 
 # Initial condition
-initialcondition = ch.Cross2D(width=0.3)
-# initialcondition: ch.Random = ch.Random(seed=42)
+# initialcondition = ch.Cross2D(width=0.3)
+initialcondition: ch.Random = ch.Random(seed=42)
 
 # Set up femhandler
 femhandler: ch.FEMHandler = ch.FEMHandler(
@@ -112,17 +112,28 @@ plt.rcParams["font.size"] = 16
 # plt.show()
 
 
-plt.figure("dt Energy")
-plt.plot(
-    time_marching.time_vec[2:],
-    energy.dt_energy_vec[1:],
-    label=r"$\partial_t\mathcal{E}$",
-)
+# plt.figure("dt Energy")
+# plt.plot(
+#     time_marching.time_vec[2:],
+#     energy.dt_energy_vec[1:],
+#     label=r"$\partial_t\mathcal{E}$",
+# )
+
+# plt.figure("Energy")
+# plt.plot(time_marching.time_vec[1:], energy.energy_vec[1:])
+
+# plt.figure("ddt Energy")
+# plt.plot(time_marching.time_vec[3:], energy.ddt_energy_vec[1:])
 
 plt.figure("Energy")
-plt.plot(time_marching.time_vec[1:], energy.energy_vec[1:])
+plt.plot(time_marching.time_vec, energy.energy_vec)
 
-plt.figure("ddt Energy")
-plt.plot(time_marching.time_vec[3:], energy.ddt_energy_vec[1:])
+plt.figure("Energy diff")
+plt.plot(
+    np.linspace(1, len(time_marching.time_vec) - 1, len(time_marching.time_vec) - 1),
+    energy.energy_diff_vec(),
+)
+
 plt.show()
+
 # output_file_pf.close()

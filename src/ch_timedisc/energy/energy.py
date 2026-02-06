@@ -129,15 +129,28 @@ class Energy:
             self.gradmu_squared_vec[-1] - self.gradmu_squared_vec[-2]
         ) / self.parameters.dt
 
-    def energy_dt_vec(self) -> List[float]:
-        """Compute the discrete time derivative of energy.
+    def energy_diff_vec(self) -> List[float]:
+        """Compute the discrete difference derivative of energy (no dt, just E^n-E^{n-1}).
 
         Returns:
-            Time derivative of energy at each step (dE/dt).
+            Difference of energy at each step (dE).
         """
         energy_dt_vec: List[float] = []
         for i in range(len(self.energy_vec) - 1):
             energy_dt_vec.append(
-                (self.energy_vec[i + 1] - self.energy_vec[i]) / self.parameters.dt
+                (self.energy_vec[i + 1] - self.energy_vec[i]) / self.energy_vec[i + 1]
             )
         return energy_dt_vec
+
+    def energy_diff_diff_vec(self) -> List[float]:
+        """
+        Computes the difference of the difference of the energy (no dts)
+
+        Returns:
+            Difference of differnce of energy at each step in a list (ddE)
+        """
+        energy_diff = self.energy_diff_vec()
+        energy_diff_diff: List[float] = []
+        for i in range(len(energy_diff) - 1):
+            energy_diff_diff.append(energy_diff[i + 1] - energy_diff[i])
+        return energy_diff_diff
