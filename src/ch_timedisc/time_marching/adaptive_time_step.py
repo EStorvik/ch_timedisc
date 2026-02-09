@@ -4,7 +4,14 @@ This module provides adaptive time step control based on different criteria.
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Optional
+from dolfinx.fem.petsc import NonlinearProblem
+
+
+if TYPE_CHECKING:
+    from ch_timedisc import VariationalForm
+    from ch_timedisc import Parameters
+    from ch_timedisc import FEMHandler
 
 
 class AdaptiveTimeStep(ABC):
@@ -27,7 +34,14 @@ class AdaptiveTimeStep(ABC):
     factor : float
     """
 
-    def __init__(self, dt0: float, factor: float, verbose: bool) -> None:
+    def __init__(
+        self,
+        factor: float,
+        variational_form: "VariationalForm",
+        parameters: "Parameters",
+        femhandler: "FEMHandler",
+        verbose: bool,
+    ) -> None:
         """Initialize the adaptive time step controller.
 
         Args:
@@ -37,7 +51,9 @@ class AdaptiveTimeStep(ABC):
 
         self.factor = factor
         self.verbose = verbose
-        self.dt = dt0
+        self.variational_form = variational_form
+        self.parameters = parameters
+        self.femhandler = femhandler
 
     @abstractmethod
     def criterion(self) -> Literal["decrease", "increase", "keep"]:
@@ -53,18 +69,27 @@ class AdaptiveTimeStep(ABC):
         """
         pass
 
-    def update_dt(self, dt: float, state: str, time_step: int) -> float:
+    def update_dt(
+        self, state: str, time_step: Optional[int] = None
+    ) -> NonlinearProblem:
         """Update time step size"""
 
         if state == "decrease":
-            n_dt = dt / self.factor
+            self.parameters.dt /= self.factor
 
         elif state == "increase":
-            n_dt = dt * self.factor
+            self.parameters.dt *= self.factor
 
-        if self.verbose:
-            print(f"Updated time step size at time step {time_step} is dt = {n_dt}")
+        if self.verbose and time_step is not None:
+            print(
+                f"Updated time step size at time step {time_step} is dt = {self.parameters.dt}"
+            )
 
-        self.dt = n_dt
-
-        return n_dt
+        self.variational_form.update()
+        problem: NonlinearProblem = NonlinearProblem(
+            self.variational_form.F,
+            self.femhandler.xi,
+            petsc_options_prefix="ch_",
+            petsc_options=self.parameters.petsc_options,
+        )
+        return problem

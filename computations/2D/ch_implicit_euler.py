@@ -79,8 +79,10 @@ output_file_pf.write_mesh(msh)
 # Time stepping
 adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStepEnergyDiff(
     energy=energy,
-    dt0=parameters.dt,
-    factor=1.1,
+    parameters=parameters,
+    femhandler=femhandler,
+    variational_form=imp_euler,
+    factor=1.5,
     threshold_high=-0.01,
     threshold_low=-0.001,
     verbose=True,
@@ -109,9 +111,9 @@ plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "serif"  # or 'sans-serif'
 plt.rcParams["font.size"] = 16
 
-# plt.figure("Energy evolution")
-# plt.plot(time_vec, energy.energy_vec)
-# plt.show()
+plt.figure("Energy evolution")
+plt.plot(time_marching.time_vec, energy.energy_vec)
+plt.show()
 
 
 # plt.figure("dt Energy")

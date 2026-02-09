@@ -85,7 +85,6 @@ class TimeMarching:
         """
         # Time stepping
         t = self.parameters.t0
-        dt = self.parameters.dt
         self.time_vec.append(t)
 
         i = 0
@@ -111,7 +110,7 @@ class TimeMarching:
             if self.adaptive_time_step is not None:
 
                 while self.adaptive_time_step.criterion() == "decrease":
-                    dt = self.adaptive_time_step.update_dt(dt, "decrease", i)
+                    self.problem = self.adaptive_time_step.update_dt("decrease", i)
                     n, converged = self.problem.solve()
                     if not converged:
                         print(
@@ -123,13 +122,13 @@ class TimeMarching:
                         )
 
                 if self.adaptive_time_step.criterion() == "increase":
-                    dt = self.adaptive_time_step.update_dt(dt, "increase", i)
+                    self.problem = self.adaptive_time_step.update_dt("increase", i)
 
             # Update and track energy
             self.energy()
 
             # Increment time
-            t += dt
+            t += self.parameters.dt
             self.time_vec.append(t)
 
             # Update visualization if provided

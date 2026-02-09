@@ -11,6 +11,9 @@ from .adaptive_time_step import AdaptiveTimeStep
 
 if TYPE_CHECKING:
     from ch_timedisc.energy import Energy
+    from ch_timedisc import VariationalForm
+    from ch_timedisc import Parameters
+    from ch_timedisc import FEMHandler
 
 
 class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
@@ -56,7 +59,9 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
     def __init__(
         self,
         energy: "Energy",
-        dt0: float,
+        variational_form: "VariationalForm",
+        parameters: "Parameters",
+        femhandler: "FEMHandler",
         factor: float = 1.1,
         threshold_low: float = -0.001,
         threshold_high: float = -0.01,
@@ -70,7 +75,13 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
             threshold_low: Lower threshold for dt * ||∇μ||². Default: -0.001
             threshold_high: Upper threshold for dt * ||∇μ||². Default: -0.01
         """
-        super().__init__(dt0=dt0, factor=factor, verbose=verbose)
+        super().__init__(
+            factor=factor,
+            femhandler=femhandler,
+            parameters=parameters,
+            variational_form=variational_form,
+            verbose=verbose,
+        )
         self.energy = energy
         self.threshold_low: float = threshold_low
         self.threshold_high: float = threshold_high
@@ -86,7 +97,9 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
             "decrease": If dt * ||∇μ||² > threshold_high (sharp features)
             "keep": If threshold_low ≤ dt * ||∇μ||² ≤ threshold_high
         """
-        dt_grad_mu_sq = -self.dt * self.energy.gradmu_squared()
+        # dt_grad_mu_sq = -self.dt * self.energy.gradmu_squared()
+        dt_grad_mu_sq = self.energy.energy() - self.energy.energy_vec[-1]
+        print(dt_grad_mu_sq)
 
         if (
             dt_grad_mu_sq < self.threshold_low
