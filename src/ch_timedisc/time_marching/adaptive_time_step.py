@@ -1,146 +1,70 @@
 """Adaptive time stepping for the Cahn-Hilliard equation.
 
-This module provides adaptive time step control based on the gradient of the
-chemical potential, ensuring numerical stability and computational efficiency.
+This module provides adaptive time step control based on different criteria.
 """
 
-from typing import TYPE_CHECKING, Any
-
-import ch_timedisc as ch
-from dolfinx.fem.petsc import NonlinearProblem
-
-if TYPE_CHECKING:
-    from ch_timedisc.energy import Energy
-    from ch_timedisc.fem import FEMHandler
-    from ch_timedisc.parameters import Parameters
-    from ch_timedisc.variational_forms import VariationalForm
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Literal
 
 
-class AdaptiveTimeStep:
-    """Adaptive time step controller for Cahn-Hilliard simulations.
+class AdaptiveTimeStep(ABC):
+    """Abstract base class for adaptive time step controllers.
 
-    This class implements an adaptive time stepping strategy that adjusts the
-    time step size based on the squared gradient of the chemical potential.
-    The time step is increased when the solution is smooth (small gradients)
-    and decreased when sharp features develop (large gradients).
-
-    The adaptation strategy:
-    - Doubles dt if dt * ||∇μ||² < 10 (smooth solution, can take larger steps)
-    - Halves dt if dt * ||∇μ||² > 100 (sharp features, need smaller steps)
-    - Keeps dt unchanged if 10 ≤ dt * ||∇μ||² ≤ 100
+    This class defines the interface for adaptive time stepping strategies
+    that adjust the time step size based on problem-specific criteria.
+    Different concrete implementations can implement different adaptation
+    strategies.
 
     Parameters
     ----------
-    energy : ch.Energy
-        Energy object that computes energy-related quantities including
-        dt_gradmusquared() which returns dt * ||∇μ||².
-    parameters : ch.Parameters
-        Parameters object containing simulation parameters including the
-        time step size (dt) which will be modified by this controller.
-    verbose : bool, optional
-        If True, prints the updated time step size after each adaptation.
-        Default is False.
+    factor : float
+       factor to increase or decrease time step by
+        decrease: dt = dt / factor
+        increase: dt = dt * factor
 
     Attributes
     ----------
-    energy : ch.Energy
-        Reference to the energy object.
-    parameters : ch.Parameters
-        Reference to the parameters object.
-    verbose : bool
-        Verbosity flag for printing time step updates.
-
-    Examples
-    --------
-    >>> import ch_timedisc as ch
-    >>> # Setup simulation components
-    >>> parameters = ch.Parameters(dt=0.01)
-    >>> energy = ch.Energy(...)  # Initialize with appropriate arguments
-    >>> adaptive_dt = ch.AdaptiveTimeStep(energy, parameters, verbose=True)
-    >>>
-    >>> # In time stepping loop
-    >>> for step in range(num_steps):
-    >>>     # Solve the system
-    >>>     solver.solve()
-    >>>     # Adapt time step based on solution characteristics
-    >>>     adaptive_dt()
-
-    Notes
-    -----
-    The threshold values (10 and 100) are heuristic and may need adjustment
-    based on the specific problem characteristics and desired accuracy.
+    factor : float
     """
 
-    def __init__(
-        self,
-        energy: "Energy",
-        femhandler: "FEMHandler",
-        parameters: "Parameters",
-        variational_form: "VariationalForm",
-        verbose: bool = False,
-    ) -> None:
+    def __init__(self, dt0: float, factor: float, verbose: bool) -> None:
         """Initialize the adaptive time step controller.
 
         Args:
-            energy: Energy object that computes energy-related quantities.
-            femhandler: Finite element handler with solution variables.
-            parameters: Parameters object containing simulation parameters.
-            variational_form: Variational form object for updating the problem.
-            verbose: Enable printing of time step updates. Defaults to False.
+            factor: Energy object that computes energy-related quantities.
+            verbose: prints update information.
         """
-        self.verbose: bool = verbose
-        self.energy: "Energy" = energy
-        self.parameters: "Parameters" = parameters
-        self.femhandler: "FEMHandler" = femhandler
-        self.variational_form: "VariationalForm" = variational_form
 
-    def __call__(self) -> NonlinearProblem:
-        """Adapt the time step based on the current solution state.
+        self.factor = factor
+        self.verbose = verbose
+        self.dt = dt0
 
-        Evaluates dt * ||∇μ||² and adjusts the time step size accordingly:
-        - If < 10: doubles the time step (solution is smooth)
-        - If > 100: halves the time step (sharp features present)
-        - Otherwise: keeps the time step unchanged
+    @abstractmethod
+    def criterion(self) -> Literal["decrease", "increase", "keep"]:
+        """Evaluate the adaptation criterion based on the current solution state.
 
-        The time step size in self.parameters.dt is modified in-place.
+        This method must be implemented by concrete subclasses to determine
+        whether to increase, decrease, or keep the time step size.
 
         Returns:
-            Updated nonlinear problem for the next time step.
-
-        Notes
-        -----
-        This method should be called after each successful time step to
-        evaluate whether the time step should be adjusted for the next step.
+            "increase": Increase the time step
+            "decrease": Decrease the time step
+            "keep": Keep the time step unchanged
         """
-        dt_grad_mu_sq = self.energy.dt_gradmusquared()
+        pass
 
-        if dt_grad_mu_sq < 10:
-            self.parameters.dt *= 2
-            problem = self.update_problem()
-        # elif dt_grad_mu_sq > 100:
-        #     self.parameters.dt *= 0.5
-        #     problem = self.update_problem()
-        else:
-            problem = self.update_problem()
+    def update_dt(self, dt: float, state: str, time_step: int) -> float:
+        """Update time step size"""
+
+        if state == "decrease":
+            n_dt = dt / self.factor
+
+        elif state == "increase":
+            n_dt = dt * self.factor
+
         if self.verbose:
-            print(f"Time step size is: {self.parameters.dt}")
+            print(f"Updated time step size at time step {time_step} is dt = {n_dt}")
 
-        return problem
+        self.dt = n_dt
 
-    def update_problem(self) -> NonlinearProblem:
-        """Update the nonlinear problem with the current parameters.
-
-        Returns:
-            Updated nonlinear problem with the current time step.
-        """
-        self.variational_form.update(self.parameters)
-
-        # Set up nonlinear problem
-        problem = NonlinearProblem(
-            self.variational_form.F,
-            self.femhandler.xi,
-            petsc_options_prefix="ch_implicit_",
-            petsc_options=self.parameters.petsc_options,
-        )
-
-        return problem
+        return n_dt

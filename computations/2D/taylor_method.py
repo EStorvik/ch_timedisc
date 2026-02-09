@@ -99,24 +99,24 @@ plt.rcParams["font.size"] = 16
 # plt.show()
 
 
-plt.figure("dt Energy")
-plt.plot(
-    time_marching.time_vec[2:],
-    energy.energy_dt_vec()[1:],
-    label=r"$\partial_t\mathcal{E}$",
-)
-plt.plot(
-    time_marching.time_vec[2:],
-    energy.gradmu_squared_vec[2:],
-    label=r"$-m\|\nabla\mu\|^2$",
-)
+# plt.figure("dt Energy")
+# plt.plot(
+#     time_marching.time_vec[2:],
+#     energy.energy_dt_vec()[1:],
+#     label=r"$\partial_t\mathcal{E}$",
+# )
+# plt.plot(
+#     time_marching.time_vec[2:],
+#     energy.gradmu_squared_vec[2:],
+#     label=r"$-m\|\nabla\mu\|^2$",
+# )
 
-plt.legend()
+# plt.legend()
 
-plt.figure("dte - mnmu^2")
-plt.plot(
-    time_marching.time_vec[2:],
-    np.array(energy.energy_dt_vec()[1:]) - np.array(energy.gradmu_squared_vec[2:]),
-)
-plt.show()
+# plt.figure("dte - mnmu^2")
+# plt.plot(
+#     time_marching.time_vec[2:],
+#     np.array(energy.energy_dt_vec()[1:]) - np.array(energy.gradmu_squared_vec[2:]),
+# )
+# plt.show()
 # output_file_pf.close()

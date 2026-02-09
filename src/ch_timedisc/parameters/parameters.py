@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from dolfinx import default_real_type
 from petsc4py import PETSc
@@ -17,7 +17,8 @@ class Parameters:
     def __init__(
         self,
         dt: float = 1e-5,
-        num_time_steps: int = 1000,
+        T: Optional[float] = None,
+        num_time_steps: Optional[int] = None,
         gamma: float = 1,
         ell: float = 0.025,
         mobility: float = 1.0,
@@ -33,7 +34,8 @@ class Parameters:
 
         Args:
             dt: Time step size. Default: 1e-5
-            num_time_steps: Number of time steps to simulate. Default: 1000
+            T: Total simulation time. Provide either T or num_time_steps, not both.
+            num_time_steps: Number of time steps to simulate. Provide either T or num_time_steps, not both.
             gamma: Surface tension parameter. Default: 1
             ell: Interface thickness/length scale. Default: 0.025
             mobility: Mobility parameter controlling dynamics. Default: 1.0
@@ -43,6 +45,9 @@ class Parameters:
             tol: Nonlinear solver tolerance. Default: 1.0e-6
             max_iter: Maximum nonlinear solver iterations. Default: 200
             t0: Initial time. Default: 0
+
+        Raises:
+            ValueError: If both T and num_time_steps are provided.
         """
 
         # Model
@@ -53,8 +58,27 @@ class Parameters:
         # Time Discretization
         self.dt: float = dt
         self.t0: float = t0
-        self.num_time_steps: int = num_time_steps
-        self.T: float = self.dt * self.num_time_steps
+
+        # Ensure exactly one of T or num_time_steps is provided
+        if T is not None and num_time_steps is not None:
+            raise ValueError(
+                "Cannot specify both 'T' and 'num_time_steps'. "
+                "Provide only one and the other will be calculated."
+            )
+        elif T is None and num_time_steps is None:
+            # Set T and use to calculate num_time_steps
+            self.T: float = 1.0
+            self.num_time_steps: int = int((self.T - t0) / dt)
+
+        elif num_time_steps is None:
+            assert T is not None
+            # Use T to calculate num_time_steps
+            self.num_time_steps = int((T - t0) / dt)
+            self.T = T
+        else:
+            # Use num_time_steps to calculate T
+            self.num_time_steps = num_time_steps
+            self.T = self.dt * self.num_time_steps + t0
 
         # Spatial Discretization
         self.nx: int = nx

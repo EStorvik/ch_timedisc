@@ -75,17 +75,14 @@ output_path = output_dir / "ch_implicit_random_e_m5.xdmf"
 output_file_pf = XDMFFile(MPI.COMM_WORLD, str(output_path), "w")
 output_file_pf.write_mesh(msh)
 
-print(type(output_file_pf))
-
-sys.exit()
 
 # Time stepping
-t: float = parameters.t0
-adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStep(
+adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStepEnergyDiff(
     energy=energy,
-    femhandler=femhandler,
-    variational_form=imp_euler,
-    parameters=parameters,
+    dt0=parameters.dt,
+    factor=1.1,
+    threshold_high=-0.01,
+    threshold_low=-0.001,
     verbose=True,
 )
 
@@ -117,24 +114,24 @@ plt.rcParams["font.size"] = 16
 # plt.show()
 
 
-plt.figure("dt Energy")
-plt.plot(
-    time_marching.time_vec[2:],
-    energy.energy_dt_vec()[1:],
-    label=r"$\partial_t\mathcal{E}$",
-)
-plt.plot(
-    time_marching.time_vec[2:],
-    energy.gradmu_squared_vec[2:],
-    label=r"$-m\|\nabla\mu\|^2$",
-)
+# plt.figure("dt Energy")
+# plt.plot(
+#     time_marching.time_vec[2:],
+#     energy.energy_dt_vec()[1:],
+#     label=r"$\partial_t\mathcal{E}$",
+# )
+# plt.plot(
+#     time_marching.time_vec[2:],
+#     energy.gradmu_squared_vec[2:],
+#     label=r"$-m\|\nabla\mu\|^2$",
+# )
 
-plt.legend()
+# plt.legend()
 
-plt.figure("dte - mnmu^2")
-plt.plot(
-    time_marching.time_vec[2:],
-    np.array(energy.energy_dt_vec()[1:]) - np.array(energy.gradmu_squared_vec[2:]),
-)
-plt.show()
-# output_file_pf.close()
+# plt.figure("dte - mnmu^2")
+# plt.plot(
+#     time_marching.time_vec[2:],
+#     np.array(energy.energy_dt_vec()[1:]) - np.array(energy.gradmu_squared_vec[2:]),
+# )
+# plt.show()
+# # output_file_pf.close()
