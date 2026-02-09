@@ -84,7 +84,7 @@ adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStepEnergyDiff(
     variational_form=imp_euler,
     factor=1.5,
     threshold_high=-0.01,
-    threshold_low=-0.001,
+    threshold_low=-0.005,
     verbose=True,
 )
 

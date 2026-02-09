@@ -102,11 +102,11 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
         print(dt_grad_mu_sq)
 
         if (
-            dt_grad_mu_sq < self.threshold_low
+            dt_grad_mu_sq < self.threshold_high
             or self.energy.energy() - self.energy.energy_vec[-1] > 0
         ):
             return "decrease"
-        elif dt_grad_mu_sq > self.threshold_high:
+        elif dt_grad_mu_sq > self.threshold_low:
             return "increase"
         else:
             return "keep"
