@@ -3,5 +3,11 @@
 from .time_marching import TimeMarching
 from .adaptive_time_step import AdaptiveTimeStep
 from .adaptive_time_step_energy_diff import AdaptiveTimeStepEnergyDiff
+from .adaptive_time_step_gradmu import AdaptiveTimeStepGradMu
 
-__all__ = ["TimeMarching", "AdaptiveTimeStep", "AdaptiveTimeStepEnergyDiff"]
+__all__ = [
+    "TimeMarching",
+    "AdaptiveTimeStep",
+    "AdaptiveTimeStepEnergyDiff",
+    "AdaptiveTimeStepGradMu",
+]

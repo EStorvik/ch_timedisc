@@ -77,7 +77,7 @@ output_file_pf.write_mesh(msh)
 
 
 # Time stepping
-adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStepEnergyDiff(
+adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStepGradMu(
     energy=energy,
     parameters=parameters,
     femhandler=femhandler,

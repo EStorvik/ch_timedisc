@@ -4,18 +4,12 @@ import os
 os.environ["FI_PROVIDER"] = "tcp"
 os.environ["MPICH_OFI_STARTUP_CONNECT"] = "0"
 
-import dolfinx
-from basix.ufl import element, mixed_element
-from dolfinx import mesh, default_real_type
-from dolfinx.fem import Function, functionspace, assemble_scalar, form
+
+from dolfinx import mesh
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.mesh import Mesh
-from petsc4py import PETSc
 
-from dolfinx.io import XDMFFile
-import numpy as np
 from mpi4py import MPI
-from ufl import TestFunction, dx, grad, inner, split, Measure
 
 import matplotlib.pyplot as plt
 
@@ -64,7 +58,7 @@ accurate_dissipation: ch.VariationalAccurateDissipation = (
 problem: NonlinearProblem = NonlinearProblem(
     accurate_dissipation.F,
     femhandler.xi,
-    petsc_options_prefix="ch_implicit_",
+    petsc_options_prefix="ch_taylor_",
     petsc_options=parameters.petsc_options,
 )
 
@@ -78,11 +72,24 @@ viz: ch.PyvistaVizualization = ch.PyvistaVizualization(
 # output_file_pf.write_mesh(msh)
 
 # Time stepping
+adaptive_time_step = ch.AdaptiveTimeStepEnergyDiff(
+    energy=energy,
+    variational_form=accurate_dissipation,
+    parameters=parameters,
+    femhandler=femhandler,
+    factor=1.5,
+    threshold_high=-0.05,
+    threshold_low=-0.001,
+    verbose=True,
+)
+
+
 time_marching: ch.TimeMarching = ch.TimeMarching(
     femhandler=femhandler,
     parameters=parameters,
     energy=energy,
     problem=problem,
+    adaptive_time_step=adaptive_time_step,
     viz=viz,
 )
 time_marching()

@@ -97,16 +97,14 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
             "decrease": If dt * ||∇μ||² > threshold_high (sharp features)
             "keep": If threshold_low ≤ dt * ||∇μ||² ≤ threshold_high
         """
-        # dt_grad_mu_sq = -self.dt * self.energy.gradmu_squared()
-        dt_grad_mu_sq = self.energy.energy() - self.energy.energy_vec[-1]
-        print(dt_grad_mu_sq)
+        energy_diff = self.energy.energy() - self.energy.energy_vec[-1]
 
         if (
-            dt_grad_mu_sq < self.threshold_high
+            energy_diff < self.threshold_high
             or self.energy.energy() - self.energy.energy_vec[-1] > 0
         ):
             return "decrease"
-        elif dt_grad_mu_sq > self.threshold_low:
+        elif energy_diff > self.threshold_low:
             return "increase"
         else:
             return "keep"

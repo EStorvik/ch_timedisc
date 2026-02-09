@@ -1,6 +1,9 @@
 """Adaptive time stepping for the Cahn-Hilliard equation.
 
-This module provides adaptive time step control based on different criteria.
+This module provides the abstract base class for adaptive time step control
+based on different criteria. Concrete implementations define specific adaptation
+strategies (e.g., based on energy dissipation, gradient of chemical potential,
+error estimates, etc.).
 """
 
 from abc import ABC, abstractmethod
@@ -20,18 +23,39 @@ class AdaptiveTimeStep(ABC):
     This class defines the interface for adaptive time stepping strategies
     that adjust the time step size based on problem-specific criteria.
     Different concrete implementations can implement different adaptation
-    strategies.
+    strategies (e.g., energy-based, gradient-based, error-based).
+
+    Subclasses must implement the `criterion()` method that returns whether
+    to "increase", "decrease", or "keep" the time step based on the current
+    solution state.
 
     Parameters
     ----------
     factor : float
-       factor to increase or decrease time step by
-        decrease: dt = dt / factor
-        increase: dt = dt * factor
+        Factor to multiply/divide time step by.
+        - Increase: dt = dt * factor
+        - Decrease: dt = dt / factor
+    variational_form : VariationalForm
+        Variational form that needs updating when dt changes.
+    parameters : Parameters
+        Simulation parameters containing dt and other settings.
+    femhandler : FEMHandler
+        Finite element handler with solution variables.
+    verbose : bool
+        If True, prints time step updates.
 
     Attributes
     ----------
     factor : float
+        Multiplicative factor for time step adaptation.
+    variational_form : VariationalForm
+        Reference to the variational form object.
+    parameters : Parameters
+        Reference to the parameters object.
+    femhandler : FEMHandler
+        Reference to the FEM handler.
+    verbose : bool
+        Verbosity flag for printing updates.
     """
 
     def __init__(
@@ -45,8 +69,11 @@ class AdaptiveTimeStep(ABC):
         """Initialize the adaptive time step controller.
 
         Args:
-            factor: Energy object that computes energy-related quantities.
-            verbose: prints update information.
+            factor: Factor to multiply/divide dt by during adaptation.
+            variational_form: Variational form to update when dt changes.
+            parameters: Simulation parameters containing dt.
+            femhandler: Finite element handler with solution variables.
+            verbose: If True, prints update information.
         """
 
         self.factor = factor
@@ -72,7 +99,19 @@ class AdaptiveTimeStep(ABC):
     def update_dt(
         self, state: str, time_step: Optional[int] = None
     ) -> NonlinearProblem:
-        """Update time step size"""
+        """Update the time step size and recreate the nonlinear problem.
+
+        This method modifies parameters.dt based on the state, updates the
+        variational form with the new dt, and creates a new NonlinearProblem
+        with the updated form.
+
+        Args:
+            state: Either "increase" or "decrease" to modify dt.
+            time_step: Current time step number for verbose output.
+
+        Returns:
+            Updated NonlinearProblem with the new time step size.
+        """
 
         if state == "decrease":
             self.parameters.dt /= self.factor
