@@ -24,9 +24,9 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
     (dt * ||∇μ||²), which represents the energy dissipation rate.
 
     The adaptation strategy:
-    - Increases dt if dt * ||∇μ||² < threshold_low (smooth solution, can take larger steps)
-    - Decreases dt if dt * ||∇μ||² > threshold_high (sharp features, need smaller steps)
-    - Keeps dt unchanged if threshold_low ≤ dt * ||∇μ||² ≤ threshold_high
+    - Increases dt if dt * ||∇μ||² < threshold_increase (smooth solution, can take larger steps)
+    - Decreases dt if dt * ||∇μ||² > threshold_decrease (sharp features, need smaller steps)
+    - Keeps dt unchanged if threshold_increase ≤ dt * ||∇μ||² ≤ threshold_decrease
 
     Parameters
     ----------
@@ -35,9 +35,9 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
         dt_gradmusquared() which returns dt * ||∇μ||².
     factor : float, optional
         Factor to increase or decrease time step by. Default: 2.0
-    threshold_low : float, optional
+    threshold_increase : float, optional
         Lower threshold for - dt * m * ||∇μ||². Default: -0.001
-    threshold_high : float, optional
+    threshold_decrease : float, optional
         Upper threshold for - dt * m * ||∇μ||². Default: -0.01
     verbose : bool, optional
         If True, prints the updated time step size after each adaptation.
@@ -45,9 +45,9 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
 
     Attributes
     ----------
-    threshold_low : float
+    threshold_increase : float
         Lower threshold for - dt * m * ||∇μ||².
-    threshold_high : float
+    threshold_decrease : float
         Upper threshold for - dt * m * ||∇μ||².
 
     Notes
@@ -63,8 +63,8 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
         parameters: "Parameters",
         femhandler: "FEMHandler",
         factor: float = 1.1,
-        threshold_low: float = -0.001,
-        threshold_high: float = -0.01,
+        threshold_increase: float = -0.001,
+        threshold_decrease: float = -0.01,
         verbose: bool = False,
     ) -> None:
         """Initialize the energy-based adaptive time step controller.
@@ -72,19 +72,19 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
         Args:
             energy: Energy object that computes energy-related quantities.
             factor: Factor to increase or decrease time step by. Default: 2.0
-            threshold_low: Lower threshold for dt * ||∇μ||². Default: -0.001
-            threshold_high: Upper threshold for dt * ||∇μ||². Default: -0.01
+            threshold_increase: Lower threshold for dt * ||∇μ||². Default: -0.001
+            threshold_decrease: Upper threshold for dt * ||∇μ||². Default: -0.01
         """
         super().__init__(
             factor=factor,
             femhandler=femhandler,
             parameters=parameters,
             variational_form=variational_form,
+            threshold_increase=threshold_increase,
+            threshold_decrease=threshold_decrease,
             verbose=verbose,
         )
         self.energy = energy
-        self.threshold_low: float = threshold_low
-        self.threshold_high: float = threshold_high
 
     def criterion(self) -> Literal["decrease", "increase", "keep"]:
         """Evaluate the energy dissipation-based adaptation criterion.
@@ -93,18 +93,18 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
         or keep the time step based on the threshold values.
 
         Returns:
-            "increase": If dt * ||∇μ||² < threshold_low (smooth solution)
-            "decrease": If dt * ||∇μ||² > threshold_high (sharp features)
-            "keep": If threshold_low ≤ dt * ||∇μ||² ≤ threshold_high
+            "increase": If dt * ||∇μ||² < threshold_increase (smooth solution)
+            "decrease": If dt * ||∇μ||² > threshold_decrease (sharp features)
+            "keep": If threshold_increase ≤ dt * ||∇μ||² ≤ threshold_decrease
         """
         energy_diff = self.energy.energy() - self.energy.energy_vec[-1]
 
         if (
-            energy_diff < self.threshold_high
+            energy_diff < self.threshold_decrease
             or self.energy.energy() - self.energy.energy_vec[-1] > 0
         ):
             return "decrease"
-        elif energy_diff > self.threshold_low:
+        elif energy_diff > self.threshold_increase:
             return "increase"
         else:
             return "keep"

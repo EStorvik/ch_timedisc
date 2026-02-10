@@ -6,6 +6,8 @@ strategies (e.g., based on energy dissipation, gradient of chemical potential,
 error estimates, etc.).
 """
 
+import sys
+import os
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Literal, Optional
 from dolfinx.fem.petsc import NonlinearProblem
@@ -41,6 +43,12 @@ class AdaptiveTimeStep(ABC):
         Simulation parameters containing dt and other settings.
     femhandler : FEMHandler
         Finite element handler with solution variables.
+    threshold_increase : float
+        Lower threshold for the adaptation criterion. When criterion value
+        is below this, time step will increase.
+    threshold_decrease : float
+        Upper threshold for the adaptation criterion. When criterion value
+        exceeds this, time step will decrease.
     verbose : bool
         If True, prints time step updates.
 
@@ -54,6 +62,10 @@ class AdaptiveTimeStep(ABC):
         Reference to the parameters object.
     femhandler : FEMHandler
         Reference to the FEM handler.
+    threshold_increase : float
+        Lower threshold for criterion-based dt increases.
+    threshold_decrease : float
+        Upper threshold for criterion-based dt decreases.
     verbose : bool
         Verbosity flag for printing updates.
     """
@@ -64,6 +76,8 @@ class AdaptiveTimeStep(ABC):
         variational_form: "VariationalForm",
         parameters: "Parameters",
         femhandler: "FEMHandler",
+        threshold_increase: float,
+        threshold_decrease: float,
         verbose: bool,
     ) -> None:
         """Initialize the adaptive time step controller.
@@ -73,6 +87,8 @@ class AdaptiveTimeStep(ABC):
             variational_form: Variational form to update when dt changes.
             parameters: Simulation parameters containing dt.
             femhandler: Finite element handler with solution variables.
+            threshold_increase: Lower threshold for criterion-based dt increases.
+            threshold_decrease: Upper threshold for criterion-based dt decreases.
             verbose: If True, prints update information.
         """
 
@@ -81,6 +97,8 @@ class AdaptiveTimeStep(ABC):
         self.variational_form = variational_form
         self.parameters = parameters
         self.femhandler = femhandler
+        self.threshold_increase: float = threshold_increase
+        self.threshold_decrease: float = threshold_decrease
 
     @abstractmethod
     def criterion(self) -> Literal["decrease", "increase", "keep"]:
@@ -125,10 +143,22 @@ class AdaptiveTimeStep(ABC):
             )
 
         self.variational_form.update()
-        problem: NonlinearProblem = NonlinearProblem(
-            self.variational_form.F,
-            self.femhandler.xi,
-            petsc_options_prefix="ch_",
-            petsc_options=self.parameters.petsc_options,
-        )
+
+        # Suppress linker warnings during JIT compilation
+        # Save original stderr
+        original_stderr = sys.stderr
+        try:
+            # Redirect stderr to devnull to suppress ld warnings
+            sys.stderr = open(os.devnull, "w")
+            problem: NonlinearProblem = NonlinearProblem(
+                self.variational_form.F,
+                self.femhandler.xi,
+                petsc_options_prefix="ch_",
+                petsc_options=self.parameters.petsc_options,
+            )
+        finally:
+            # Restore stderr
+            sys.stderr.close() if sys.stderr != original_stderr else None
+            sys.stderr = original_stderr
+
         return problem

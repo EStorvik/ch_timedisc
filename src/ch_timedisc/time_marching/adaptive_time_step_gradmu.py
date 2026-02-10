@@ -25,9 +25,9 @@ class AdaptiveTimeStepGradMu(AdaptiveTimeStep):
     potential. This represents the time-scaled energy dissipation rate.
 
     The adaptation strategy:
-    - Decreases dt if dt*||∇μ||² < threshold_high (large dissipation, needs smaller steps)
-    - Increases dt if dt*||∇μ||² > threshold_low (small dissipation, can take larger steps)
-    - Keeps dt unchanged if threshold_high ≤ dt*||∇μ||² ≤ threshold_low
+    - Decreases dt if dt*||∇μ||² < threshold_decrease (large dissipation, needs smaller steps)
+    - Increases dt if dt*||∇μ||² > threshold_increase (small dissipation, can take larger steps)
+    - Keeps dt unchanged if threshold_decrease ≤ dt*||∇μ||² ≤ threshold_increase
 
     Note: Since the energy dissipation -m||∇μ||² is negative, thresholds are negative
     values where more negative means larger dissipation.
@@ -45,10 +45,10 @@ class AdaptiveTimeStepGradMu(AdaptiveTimeStep):
         Finite element handler with solution variables.
     factor : float, optional
         Factor to multiply/divide time step by. Default: 1.1
-    threshold_low : float, optional
+    threshold_increase : float, optional
         Upper threshold for -dt*m||∇μ||² (less negative). If exceeded, dt increases.
         Default: -0.001
-    threshold_high : float, optional
+    threshold_decrease : float, optional
         Lower threshold for -dt*m||∇μ||² (more negative). If below, dt decreases.
         Default: -0.01
     verbose : bool, optional
@@ -59,9 +59,9 @@ class AdaptiveTimeStepGradMu(AdaptiveTimeStep):
     ----------
     energy : Energy
         Reference to the energy object.
-    threshold_low : float
+    threshold_increase : float
         Upper threshold (less negative) for dt increases.
-    threshold_high : float
+    threshold_decrease : float
         Lower threshold (more negative) for dt decreases.
 
     Notes
@@ -77,8 +77,8 @@ class AdaptiveTimeStepGradMu(AdaptiveTimeStep):
         parameters: "Parameters",
         femhandler: "FEMHandler",
         factor: float = 1.1,
-        threshold_low: float = -0.001,
-        threshold_high: float = -0.01,
+        threshold_increase: float = -0.001,
+        threshold_decrease: float = -0.01,
         verbose: bool = False,
     ) -> None:
         """Initialize the gradient-based adaptive time step controller.
@@ -89,8 +89,8 @@ class AdaptiveTimeStepGradMu(AdaptiveTimeStep):
             parameters: Simulation parameters containing dt.
             femhandler: Finite element handler with solution variables.
             factor: Factor to multiply/divide dt by. Default: 1.1
-            threshold_low: Upper threshold (less negative) for dt increases. Default: -0.001
-            threshold_high: Lower threshold (more negative) for dt decreases. Default: -0.01
+            threshold_increase: Upper threshold (less negative) for dt increases. Default: -0.001
+            threshold_decrease: Lower threshold (more negative) for dt decreases. Default: -0.01
             verbose: If True, prints time step updates. Default: False
         """
         super().__init__(
@@ -98,11 +98,11 @@ class AdaptiveTimeStepGradMu(AdaptiveTimeStep):
             femhandler=femhandler,
             parameters=parameters,
             variational_form=variational_form,
+            threshold_increase=threshold_increase,
+            threshold_decrease=threshold_decrease,
             verbose=verbose,
         )
         self.energy = energy
-        self.threshold_low: float = threshold_low
-        self.threshold_high: float = threshold_high
 
     def criterion(self) -> Literal["decrease", "increase", "keep"]:
         """Evaluate the gradient-based adaptation criterion.
@@ -112,19 +112,19 @@ class AdaptiveTimeStepGradMu(AdaptiveTimeStep):
         energy is increasing, which triggers a dt decrease.
 
         Returns:
-            "decrease": If dt*(-m||∇μ||²) < threshold_high (more negative, large dissipation)
+            "decrease": If dt*(-m||∇μ||²) < threshold_decrease (more negative, large dissipation)
                        OR if energy is increasing (non-physical behavior)
-            "increase": If dt*(-m||∇μ||²) > threshold_low (less negative, small dissipation)
-            "keep": If threshold_high ≤ dt*(-m||∇μ||²) ≤ threshold_low
+            "increase": If dt*(-m||∇μ||²) > threshold_increase (less negative, small dissipation)
+            "keep": If threshold_decrease ≤ dt*(-m||∇μ||²) ≤ threshold_increase
         """
         dtgradmu = -self.parameters.dt * self.energy.gradmu_squared()
 
         if (
-            dtgradmu < self.threshold_high
+            dtgradmu < self.threshold_decrease
             or self.energy.energy() - self.energy.energy_vec[-1] > 0
         ):
             return "decrease"
-        elif dtgradmu > self.threshold_low:
+        elif dtgradmu > self.threshold_increase:
             return "increase"
         else:
             return "keep"

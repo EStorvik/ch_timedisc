@@ -1,5 +1,7 @@
 import numpy as np
-from typing import Dict, Any, Optional
+import json
+from pathlib import Path
+from typing import Dict, Any, Optional, Union
 
 from dolfinx import default_real_type
 from petsc4py import PETSc
@@ -110,3 +112,110 @@ class Parameters:
             # "snes_monitor": None,
             # "snes_view": None,
         }
+
+    @classmethod
+    def from_json(cls, json_path: Union[str, Path]) -> "Parameters":
+        """Load parameters from a JSON file.
+
+        Args:
+            json_path: Path to the JSON file containing parameter values.
+
+        Returns:
+            Parameters object initialized with values from the JSON file.
+
+        Example:
+            >>> params = Parameters.from_json("parameters.json")
+        """
+        json_path = Path(json_path)
+        with open(json_path, "r") as f:
+            param_dict = json.load(f)
+
+        return cls(**param_dict)
+
+    def to_json(self, json_path: Union[str, Path]) -> None:
+        """Save parameters to a JSON file.
+
+        Args:
+            json_path: Path where the JSON file will be written.
+
+        Example:
+            >>> params = Parameters(dt=1e-5, T=1.0)
+            >>> params.to_json("parameters.json")
+        """
+        json_path = Path(json_path)
+        param_dict = {
+            "dt": self.dt,
+            "T": self.T,
+            "num_time_steps": self.num_time_steps,
+            "gamma": self.gamma,
+            "ell": self.ell,
+            "mobility": self.mobility,
+            "nx": self.nx,
+            "ny": self.ny,
+            "nz": self.nz,
+            "tol": self.tol,
+            "max_iter": self.max_iter,
+            "t0": self.t0,
+        }
+
+        with open(json_path, "w") as f:
+            json.dump(param_dict, indent=2, fp=f)
+
+    def __str__(self) -> str:
+        """Return a nicely formatted string representation of the parameters.
+
+        Returns:
+            Formatted string displaying all parameter values.
+        """
+        return f"""
+╔═══════════════════════════════════════════════════════╗
+║          Cahn-Hilliard Simulation Parameters          ║
+╠═══════════════════════════════════════════════════════╣
+║ Model Parameters                                      ║
+╠═══════════════════════════════════════════════════════╣
+║  γ (gamma):          {self.gamma:>30.6e}   ║
+║  ℓ (ell):            {self.ell:>30.6e}   ║
+║  m (mobility):       {self.mobility:>30.6e}   ║
+╠═══════════════════════════════════════════════════════╣
+║ Time Discretization                                   ║
+╠═══════════════════════════════════════════════════════╣
+║  dt:                 {self.dt:>30.6e}   ║
+║  t0:                 {self.t0:>30.6e}   ║
+║  T (final time):     {self.T:>30.6e}   ║
+║  num_time_steps:     {self.num_time_steps:>30d}   ║
+╠═══════════════════════════════════════════════════════╣
+║ Spatial Discretization                                ║
+╠═══════════════════════════════════════════════════════╣
+║  nx:                 {self.nx:>30d}   ║
+║  ny:                 {self.ny:>30d}   ║
+║  nz:                 {self.nz:>30d}   ║
+╠═══════════════════════════════════════════════════════╣
+║ Nonlinear Solver                                      ║
+╠═══════════════════════════════════════════════════════╣
+║  tolerance:          {self.tol:>30.6e}   ║
+║  max_iter:           {self.max_iter:>30d}   ║
+║  linear solver:      {self.petsc_options['pc_factor_mat_solver_type']:>30s}   ║
+╚═══════════════════════════════════════════════════════╝
+"""
+
+    def __repr__(self) -> str:
+        """Return a concise representation suitable for debugging.
+
+        Returns:
+            String representation showing key parameters.
+        """
+        return (
+            f"Parameters(dt={self.dt:.2e}, T={self.T:.2e}, "
+            f"num_time_steps={self.num_time_steps}, "
+            f"gamma={self.gamma}, ell={self.ell}, mobility={self.mobility}, "
+            f"nx={self.nx}, ny={self.ny}, nz={self.nz})"
+        )
+
+    def print_parameters(self) -> None:
+        """Print the parameters in a nicely formatted way.
+
+        Example:
+            >>> params = Parameters(dt=1e-5, T=1.0)
+            >>> params.print_parameters()
+        """
+        print(str(self))

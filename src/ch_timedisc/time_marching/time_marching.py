@@ -1,6 +1,8 @@
 """Time stepping and simulation control for Cahn-Hilliard equations."""
 
 from typing import TYPE_CHECKING, List, Optional, Union
+from tqdm import tqdm
+
 
 if TYPE_CHECKING:
     from ch_timedisc.fem import FEMHandler
@@ -93,9 +95,18 @@ class TimeMarching:
             pf_out, _ = self.femhandler.xi.split()
             self.output_file.write_function(pf_out, t)
 
+        # Initialize progress bar if verbose
+        if self.verbose:
+            pbar = tqdm(
+                total=self.parameters.T - self.parameters.t0,
+                desc="Time evolution",
+                unit="s",
+                bar_format="{l_bar}{bar}| {n:.4e}/{total:.4e} [{elapsed}<{remaining}, dt={postfix}]",
+            )
+            pbar.set_postfix_str(f"{self.parameters.dt:.4e}")
+
         while t < self.parameters.T:
             i += 1
-
             # Copy current solution to old for time stepping
             self.femhandler.xi_old.x.array[:] = self.femhandler.xi.x.array
             self.femhandler.xi_old.x.scatter_forward()
@@ -104,7 +115,7 @@ class TimeMarching:
             if not converged:
                 print(f"WARNING: Newton solver did not converge at time step {i}")
 
-            if self.verbose:
+            if self.verbose and not self.adaptive_time_step:
                 print(f"Used {n} newton iterations to converge at time step {i}.")
 
             if self.adaptive_time_step is not None:
@@ -117,12 +128,12 @@ class TimeMarching:
                             f"WARNING: Newton solver did not converge at time step {i} within adaptive time step decrease."
                         )
                     if self.verbose:
-                        print(
-                            f"Used {n} newton iterations to converge at time step {i}."
-                        )
+                        pbar.set_postfix_str(f"{self.parameters.dt:.4e}")
 
                 if self.adaptive_time_step.criterion() == "increase":
                     self.problem = self.adaptive_time_step.update_dt("increase", i)
+                    if self.verbose:
+                        pbar.set_postfix_str(f"{self.parameters.dt:.4e}")
 
             # Update and track energy
             self.energy()
@@ -131,6 +142,10 @@ class TimeMarching:
             t += self.parameters.dt
             self.time_vec.append(t)
 
+            # Update progress bar
+            if self.verbose:
+                pbar.update(self.parameters.dt)
+
             # Update visualization if provided
             if self.viz is not None:
                 self.viz.update(self.femhandler.xi.sub(0), t)
@@ -138,5 +153,9 @@ class TimeMarching:
             if self.output_file is not None:
                 pf_out, _ = self.femhandler.xi.split()
                 self.output_file.write_function(pf_out, t)
+
+        # Close progress bar
+        if self.verbose:
+            pbar.close()
 
         return self.time_vec
