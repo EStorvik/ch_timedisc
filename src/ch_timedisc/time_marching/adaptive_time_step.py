@@ -72,12 +72,9 @@ class AdaptiveTimeStep(ABC):
 
     def __init__(
         self,
-        factor: float,
         variational_form: "VariationalForm",
         parameters: "Parameters",
         femhandler: "FEMHandler",
-        threshold_increase: float,
-        threshold_decrease: float,
         verbose: bool,
     ) -> None:
         """Initialize the adaptive time step controller.
@@ -92,13 +89,13 @@ class AdaptiveTimeStep(ABC):
             verbose: If True, prints update information.
         """
 
-        self.factor = factor
+        self.factor = parameters.adaptive_factor
         self.verbose = verbose
         self.variational_form = variational_form
         self.parameters = parameters
         self.femhandler = femhandler
-        self.threshold_increase: float = threshold_increase
-        self.threshold_decrease: float = threshold_decrease
+        self.threshold_increase: float = parameters.adaptive_threshold_increase
+        self.threshold_decrease: float = parameters.adaptive_threshold_decrease
 
     @abstractmethod
     def criterion(self) -> Literal["decrease", "increase", "keep"]:

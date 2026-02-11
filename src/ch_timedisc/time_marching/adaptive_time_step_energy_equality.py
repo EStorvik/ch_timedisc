@@ -71,9 +71,6 @@ class AdaptiveTimeStepEnergyEquality(AdaptiveTimeStep):
         variational_form: "VariationalForm",
         parameters: "Parameters",
         femhandler: "FEMHandler",
-        factor: float = 1.1,
-        threshold_increase: float = -0.001,
-        threshold_decrease: float = -0.01,
         verbose: bool = False,
     ) -> None:
         """Initialize the energy equality-based adaptive time step controller.
@@ -89,12 +86,9 @@ class AdaptiveTimeStepEnergyEquality(AdaptiveTimeStep):
             verbose: If True, prints the updated time step size. Default: False
         """
         super().__init__(
-            factor=factor,
             femhandler=femhandler,
             parameters=parameters,
             variational_form=variational_form,
-            threshold_increase=threshold_increase,
-            threshold_decrease=threshold_decrease,
             verbose=verbose,
         )
         self.energy = energy

@@ -76,9 +76,6 @@ class AdaptiveTimeStepGradMu(AdaptiveTimeStep):
         variational_form: "VariationalForm",
         parameters: "Parameters",
         femhandler: "FEMHandler",
-        factor: float = 1.1,
-        threshold_increase: float = -0.001,
-        threshold_decrease: float = -0.01,
         verbose: bool = False,
     ) -> None:
         """Initialize the gradient-based adaptive time step controller.
@@ -94,12 +91,9 @@ class AdaptiveTimeStepGradMu(AdaptiveTimeStep):
             verbose: If True, prints time step updates. Default: False
         """
         super().__init__(
-            factor=factor,
             femhandler=femhandler,
             parameters=parameters,
             variational_form=variational_form,
-            threshold_increase=threshold_increase,
-            threshold_decrease=threshold_decrease,
             verbose=verbose,
         )
         self.energy = energy

@@ -82,9 +82,6 @@ adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStepEnergyEquality(
     parameters=parameters,
     femhandler=femhandler,
     variational_form=imp_euler,
-    factor=1.5,
-    threshold_decrease=0.01,
-    threshold_increase=0.0001,
     verbose=True,
 )
 

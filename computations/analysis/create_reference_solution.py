@@ -31,7 +31,6 @@ parameters: ch.Parameters = ch.Parameters.from_json(
     "reference_solution/parameters.json"
 )
 
-print(parameters)
 
 # Double well
 doublewell: ch.DoubleWell = ch.DoubleWell()
@@ -89,9 +88,6 @@ adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStepEnergyDiff(
     parameters=parameters,
     femhandler=femhandler,
     variational_form=imp_euler,
-    factor=1.5,
-    threshold_decrease=-0.01,
-    threshold_increase=-0.0001,
     verbose=False,
 )
 

@@ -21,6 +21,9 @@ class Parameters:
         dt: float = 1e-5,
         T: Optional[float] = None,
         num_time_steps: Optional[int] = None,
+        adaptive_threshold_increase: float = -0.001,
+        adaptive_threshold_decrease: float = -0.01,
+        adaptive_factor: float = 1.5,
         gamma: float = 1,
         ell: float = 0.025,
         mobility: float = 1.0,
@@ -60,6 +63,10 @@ class Parameters:
         # Time Discretization
         self.dt: float = dt
         self.t0: float = t0
+
+        self.adaptive_threshold_increase: float = adaptive_threshold_increase
+        self.adaptive_threshold_decrease: float = adaptive_threshold_decrease
+        self.adaptive_factor: float = adaptive_factor
 
         # Ensure exactly one of T or num_time_steps is provided
         if T is not None and num_time_steps is not None:
@@ -113,6 +120,8 @@ class Parameters:
             # "snes_view": None,
         }
 
+        print(self)
+
     @classmethod
     def from_json(cls, json_path: Union[str, Path]) -> "Parameters":
         """Load parameters from a JSON file.
@@ -147,6 +156,8 @@ class Parameters:
             "dt": self.dt,
             "T": self.T,
             "num_time_steps": self.num_time_steps,
+            "adaptive_threshold_increase": self.adaptive_threshold_increase,
+            "adaptive_threshold_decrease": self.adaptive_threshold_decrease,
             "gamma": self.gamma,
             "ell": self.ell,
             "mobility": self.mobility,
@@ -173,28 +184,31 @@ class Parameters:
 ╠═══════════════════════════════════════════════════════╣
 ║ Model Parameters                                      ║
 ╠═══════════════════════════════════════════════════════╣
-║  γ (gamma):          {self.gamma:>30.6e}   ║
-║  ℓ (ell):            {self.ell:>30.6e}   ║
-║  m (mobility):       {self.mobility:>30.6e}   ║
+║  γ (gamma):                            {self.gamma:>13.6e}  ║
+║  ℓ (ell):                              {self.ell:>13.6e}  ║
+║  m (mobility):                         {self.mobility:>13.6e}  ║
 ╠═══════════════════════════════════════════════════════╣
 ║ Time Discretization                                   ║
 ╠═══════════════════════════════════════════════════════╣
-║  dt:                 {self.dt:>30.6e}   ║
-║  t0:                 {self.t0:>30.6e}   ║
-║  T (final time):     {self.T:>30.6e}   ║
-║  num_time_steps:     {self.num_time_steps:>30d}   ║
+║  dt:                                   {self.dt:>13.6e}  ║
+║  t0:                                   {self.t0:>13.6e}  ║
+║  T (final time):                       {self.T:>13.6e}  ║
+║  num_time_steps:                          {self.num_time_steps:>10d}  ║
+║  adaptive_threshold_increase:          {self.adaptive_threshold_increase:>13.6e}  ║
+║  adaptive_threshold_decrease:          {self.adaptive_threshold_decrease:>13.6e}  ║
+║  adaptive_factor:                      {self.adaptive_factor:>13.6e}  ║
 ╠═══════════════════════════════════════════════════════╣
 ║ Spatial Discretization                                ║
 ╠═══════════════════════════════════════════════════════╣
-║  nx:                 {self.nx:>30d}   ║
-║  ny:                 {self.ny:>30d}   ║
-║  nz:                 {self.nz:>30d}   ║
+║  nx:                                      {self.nx:>10d}  ║
+║  ny:                                      {self.ny:>10d}  ║
+║  nz:                                      {self.nz:>10d}  ║
 ╠═══════════════════════════════════════════════════════╣
 ║ Nonlinear Solver                                      ║
 ╠═══════════════════════════════════════════════════════╣
-║  tolerance:          {self.tol:>30.6e}   ║
-║  max_iter:           {self.max_iter:>30d}   ║
-║  linear solver:      {self.petsc_options['pc_factor_mat_solver_type']:>30s}   ║
+║  tolerance:                            {self.tol:>13.6e}  ║
+║  max_iter:                                {self.max_iter:>10d}  ║
+║  linear solver:                      {self.petsc_options['pc_factor_mat_solver_type']:>15s}  ║
 ╚═══════════════════════════════════════════════════════╝
 """
 

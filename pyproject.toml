@@ -7,7 +7,7 @@ name = "ch-timedisc"
 version = "0.1.0"
 description = "CH Timedisc package"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
     {name = "EStorvik"}
@@ -23,6 +23,7 @@ dev = [
     "pre-commit>=3.0",
     "flake8>=4.0",
     "numpy",
+    "types-tqdm",
 ]
 
 [tool.pytest.ini_options]
@@ -36,3 +37,4 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+

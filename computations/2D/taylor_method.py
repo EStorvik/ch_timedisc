@@ -77,9 +77,6 @@ adaptive_time_step = ch.AdaptiveTimeStepEnergyDiff(
     variational_form=accurate_dissipation,
     parameters=parameters,
     femhandler=femhandler,
-    factor=1.5,
-    threshold_high=-0.05,
-    threshold_low=-0.001,
     verbose=True,
 )
 
