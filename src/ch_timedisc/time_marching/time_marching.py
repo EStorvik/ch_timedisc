@@ -101,7 +101,10 @@ class TimeMarching:
                 total=self.parameters.T - self.parameters.t0,
                 desc="Time evolution",
                 unit="s",
-                bar_format="{l_bar}{bar}| {n:.4e}/{total:.4e} [{elapsed}<{remaining}, dt={postfix}]",
+                bar_format=(
+                    "{l_bar}{bar}| {n:.4e}/{total:.4e} "
+                    "[{elapsed}<{remaining}, dt={postfix}]"
+                ),
             )
             pbar.set_postfix_str(f"{self.parameters.dt:.4e}")
 
