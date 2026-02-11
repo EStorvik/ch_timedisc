@@ -1,6 +1,8 @@
 """Time stepping and simulation control for Cahn-Hilliard equations."""
 
 from typing import TYPE_CHECKING, List, Optional, Union
+from tqdm import tqdm
+
 
 if TYPE_CHECKING:
     from ch_timedisc.fem import FEMHandler
@@ -20,17 +22,17 @@ class TimeMarching:
 
     This class orchestrates the time-dependent solution process, handling:
     - Time stepping loops
-    - Solution updates and time evolution
-    - Nonlinear solver control
+    - Solution updates and time evolution (with potential adaptive time-step sizes)
+    - Nonlinear solver
     - Energy tracking
     - Visualization updates
-    - Verbosity control
 
     Attributes:
         femhandler (FEMHandler): Finite element handler with solution variables.
         parameters (Parameters): Simulation parameters (t0, dt, num_time_steps).
         energy (Energy): Energy tracker for monitoring energy evolution.
         problem (NonlinearProblem): The nonlinear problem to solve at each step.
+        adaptivive_time_step (AdaptiveTimeStep, Optional): adaptive time step rules.
         verbose (bool): Enable detailed output during time stepping.
         viz (Visualization, optional): Visualization handler for live updates.
     """
@@ -87,35 +89,64 @@ class TimeMarching:
         t = self.parameters.t0
         self.time_vec.append(t)
 
+        i = 0
+
         if self.output_file is not None:
             pf_out, _ = self.femhandler.xi.split()
             self.output_file.write_function(pf_out, t)
 
-        for i in range(self.parameters.num_time_steps):
+        # Initialize progress bar if verbose
+        if self.verbose:
+            pbar = tqdm(
+                total=self.parameters.T - self.parameters.t0,
+                desc="Time evolution",
+                unit="s",
+                bar_format=(
+                    "{l_bar}{bar}| {n:.4e}/{total:.4e} "
+                    "[{elapsed}<{remaining}, dt={postfix}]"
+                ),
+            )
+            pbar.set_postfix_str(f"{self.parameters.dt:.4e}")
+
+        while t < self.parameters.T:
+            i += 1
             # Copy current solution to old for time stepping
             self.femhandler.xi_old.x.array[:] = self.femhandler.xi.x.array
             self.femhandler.xi_old.x.scatter_forward()
 
-            # Increment time
-            t += self.parameters.dt
-
-            # Solve the nonlinear system at current time step
             n, converged = self.problem.solve()
-
             if not converged:
                 print(f"WARNING: Newton solver did not converge at time step {i}")
+
+            if self.verbose and not self.adaptive_time_step:
+                print(f"Used {n} newton iterations to converge at time step {i}.")
+
+            if self.adaptive_time_step is not None:
+                while self.adaptive_time_step.criterion() == "decrease":
+                    self.problem = self.adaptive_time_step.update_dt("decrease", i)
+                    n, converged = self.problem.solve()
+                    if not converged:
+                        print(
+                            f"WARNING: Newton solver did not converge at time step {i} within adaptive time step decrease."
+                        )
+                    if self.verbose:
+                        pbar.set_postfix_str(f"{self.parameters.dt:.4e}")
+
+                if self.adaptive_time_step.criterion() == "increase":
+                    self.problem = self.adaptive_time_step.update_dt("increase", i)
+                    if self.verbose:
+                        pbar.set_postfix_str(f"{self.parameters.dt:.4e}")
 
             # Update and track energy
             self.energy()
 
-            # Adaptive time-stepping
-            if self.adaptive_time_step is not None:
-                self.problem = self.adaptive_time_step()
-
-            if self.verbose:
-                print(f"Used {n} newton iterations to converge at time step {i}.")
-
+            # Increment time
+            t += self.parameters.dt
             self.time_vec.append(t)
+
+            # Update progress bar
+            if self.verbose:
+                pbar.update(self.parameters.dt)
 
             # Update visualization if provided
             if self.viz is not None:
@@ -124,5 +155,9 @@ class TimeMarching:
             if self.output_file is not None:
                 pf_out, _ = self.femhandler.xi.split()
                 self.output_file.write_function(pf_out, t)
+
+        # Close progress bar
+        if self.verbose:
+            pbar.close()
 
         return self.time_vec

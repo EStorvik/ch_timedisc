@@ -128,3 +128,4 @@ dmypy.json
 
 # Output
 computations/output/
+reference_solution/

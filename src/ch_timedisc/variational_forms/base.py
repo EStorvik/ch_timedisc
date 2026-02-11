@@ -75,7 +75,7 @@ class VariationalForm(ABC):
         """
         pass
 
-    def update(self, parameters: "Parameters") -> None:
+    def update(self) -> None:
         """Update variational forms with new parameters.
 
         This is useful for adaptive time stepping where parameters change.
@@ -83,5 +83,4 @@ class VariationalForm(ABC):
         Args:
             parameters: Updated simulation parameters.
         """
-        self.parameters = parameters
         self._build_forms()

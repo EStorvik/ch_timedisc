@@ -16,6 +16,11 @@ from .variational_forms.accurate_dissipation import VariationalAccurateDissipati
 from .variational_forms.crank_nicholson import VariationalCrankNicholson
 from .time_marching.time_marching import TimeMarching
 from .time_marching.adaptive_time_step import AdaptiveTimeStep
+from .time_marching.adaptive_time_step_energy_diff import AdaptiveTimeStepEnergyDiff
+from .time_marching.adaptive_time_step_energy_equality import (
+    AdaptiveTimeStepEnergyEquality,
+)
+from .time_marching.adaptive_time_step_gradmu import AdaptiveTimeStepGradMu
 
 __all__ = [
     "Parameters",
@@ -33,6 +38,9 @@ __all__ = [
     "VariationalCrankNicholson",
     "TimeMarching",
     "AdaptiveTimeStep",
+    "AdaptiveTimeStepEnergyDiff",
+    "AdaptiveTimeStepEnergyEquality",
+    "AdaptiveTimeStepGradMu",
     "initial_mu",
     "initial_pf",
 ]

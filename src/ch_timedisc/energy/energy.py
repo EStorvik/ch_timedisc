@@ -63,15 +63,13 @@ class Energy:
         Returns:
             The computed energy value at the current solution (tracked by femhandler).
         """
-        pf = self.femhandler.pf
-        mu = self.femhandler.mu
 
         # Compute energy and add to list
-        energy: float = assemble_scalar(form(self.energy(pf))).real
+        energy: float = self.energy()
         self.energy_vec.append(energy)
 
         # Compute gradmu squared and add to list
-        self.gradmu_squared_vec.append(self.gradmu_squared(mu))
+        self.gradmu_squared_vec.append(self.gradmu_squared())
 
         # Compute dt_E
         if len(self.energy_vec) > 1:
@@ -87,7 +85,7 @@ class Energy:
 
         return energy
 
-    def energy(self, pf: PfType) -> Form:
+    def energy(self) -> float:
         """Compute the Cahn-Hilliard free energy functional.
 
         The energy consists of the bulk free energy (double well potential)
@@ -99,12 +97,19 @@ class Energy:
         Returns:
             The energy form to be assembled.
         """
-        return (
-            1 / self.ell * self.doublewell(pf)
-            + self.ell / 2 * inner(grad(pf), grad(pf))
-        ) * dx
+        pf = self.femhandler.pf
 
-    def gradmu_squared(self, mu: PfType) -> float:
+        return assemble_scalar(
+            form(
+                (
+                    1 / self.ell * self.doublewell(pf)
+                    + self.ell / 2 * inner(grad(pf), grad(pf))
+                )
+                * dx
+            )
+        ).real
+
+    def gradmu_squared(self) -> float:
         """Compute the squared gradient of chemical potential (dissipation term).
 
         This represents the energy dissipation rate in the Cahn-Hilliard equation.
@@ -116,10 +121,13 @@ class Energy:
             Mobility-weighted squared gradient integral.
         """
         return (
-            -self.mobility * assemble_scalar(form(inner(grad(mu), grad(mu)) * dx)).real
+            -self.mobility
+            * assemble_scalar(
+                form(inner(grad(self.femhandler.mu), grad(self.femhandler.mu)) * dx)
+            ).real
         )
 
-    def dt_gradmusquared(self) -> float:
+    def dt_gradmu_squared(self) -> float:
         """Compute the time derivative of squared gradient of chemical potential.
 
         Returns:

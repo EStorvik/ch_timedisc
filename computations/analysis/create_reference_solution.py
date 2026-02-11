@@ -4,6 +4,9 @@ import os
 os.environ["FI_PROVIDER"] = "tcp"
 os.environ["MPICH_OFI_STARTUP_CONNECT"] = "0"
 
+# Suppress duplicate rpath linker warnings during JIT compilation
+os.environ["LDFLAGS"] = os.environ.get("LDFLAGS", "") + " -Wl,-w"
+
 import sys
 
 from dolfinx import mesh
@@ -24,7 +27,10 @@ import ch_timedisc as ch
 
 
 # Define material parameters
-parameters: ch.Parameters = ch.Parameters()
+parameters: ch.Parameters = ch.Parameters.from_json(
+    "reference_solution/parameters.json"
+)
+
 
 # Double well
 doublewell: ch.DoubleWell = ch.DoubleWell()
@@ -68,21 +74,21 @@ viz: ch.PyvistaVizualization = ch.PyvistaVizualization(
     femhandler.V.sub(0), femhandler.xi.sub(0), 0.0
 )
 
-# Output file (absolute path under computations/output)
-output_dir = Path(__file__).resolve().parent.parent / "output"
-output_dir.mkdir(parents=True, exist_ok=True)
-output_path = output_dir / "ch_implicit_random_e_m5.xdmf"
-output_file_pf = XDMFFile(MPI.COMM_WORLD, str(output_path), "w")
-output_file_pf.write_mesh(msh)
+# # Output file (absolute path under computations/output)
+# output_dir = Path(__file__).resolve().parent.parent / "output"
+# output_dir.mkdir(parents=True, exist_ok=True)
+# output_path = output_dir / "ch_implicit_random_e_m5.xdmf"
+# output_file_pf = XDMFFile(MPI.COMM_WORLD, str(output_path), "w")
+# output_file_pf.write_mesh(msh)
 
 
 # Time stepping
-adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStepEnergyEquality(
+adaptive_time_step: ch.AdaptiveTimeStep = ch.AdaptiveTimeStepEnergyDiff(
     energy=energy,
     parameters=parameters,
     femhandler=femhandler,
     variational_form=imp_euler,
-    verbose=True,
+    verbose=False,
 )
 
 
@@ -92,8 +98,9 @@ time_marching: ch.TimeMarching = ch.TimeMarching(
     parameters=parameters,
     energy=energy,
     problem=problem,
-    adaptive_time_step=adaptive_time_step,
     viz=viz,
+    adaptive_time_step=adaptive_time_step,
+    verbose=True,
     # output_file = output_file_pf,
 )
 
@@ -104,33 +111,33 @@ time_marching()
 viz.final_plot(femhandler.xi.sub(0))
 
 
-plt.rcParams["text.usetex"] = True
-plt.rcParams["font.family"] = "serif"  # or 'sans-serif'
-plt.rcParams["font.size"] = 16
+# plt.rcParams["text.usetex"] = True
+# plt.rcParams["font.family"] = "serif"  # or 'sans-serif'
+# plt.rcParams["font.size"] = 16
 
-plt.figure("Energy evolution")
-plt.plot(time_marching.time_vec, energy.energy_vec)
-plt.show()
-
-
-# plt.figure("dt Energy")
-# plt.plot(
-#     time_marching.time_vec[2:],
-#     energy.energy_dt_vec()[1:],
-#     label=r"$\partial_t\mathcal{E}$",
-# )
-# plt.plot(
-#     time_marching.time_vec[2:],
-#     energy.gradmu_squared_vec[2:],
-#     label=r"$-m\|\nabla\mu\|^2$",
-# )
-
-# plt.legend()
-
-# plt.figure("dte - mnmu^2")
-# plt.plot(
-#     time_marching.time_vec[2:],
-#     np.array(energy.energy_dt_vec()[1:]) - np.array(energy.gradmu_squared_vec[2:]),
-# )
+# plt.figure("Energy evolution")
+# plt.plot(time_marching.time_vec, energy.energy_vec)
 # plt.show()
-# # output_file_pf.close()
+
+
+# # plt.figure("dt Energy")
+# # plt.plot(
+# #     time_marching.time_vec[2:],
+# #     energy.energy_dt_vec()[1:],
+# #     label=r"$\partial_t\mathcal{E}$",
+# # )
+# # plt.plot(
+# #     time_marching.time_vec[2:],
+# #     energy.gradmu_squared_vec[2:],
+# #     label=r"$-m\|\nabla\mu\|^2$",
+# # )
+
+# # plt.legend()
+
+# # plt.figure("dte - mnmu^2")
+# # plt.plot(
+# #     time_marching.time_vec[2:],
+# #     np.array(energy.energy_dt_vec()[1:]) - np.array(energy.gradmu_squared_vec[2:]),
+# # )
+# # plt.show()
+# # # output_file_pf.close()

@@ -1,146 +1,162 @@
 """Adaptive time stepping for the Cahn-Hilliard equation.
 
-This module provides adaptive time step control based on the gradient of the
-chemical potential, ensuring numerical stability and computational efficiency.
+This module provides the abstract base class for adaptive time step control
+based on different criteria. Concrete implementations define specific adaptation
+strategies (e.g., based on energy dissipation, gradient of chemical potential,
+error estimates, etc.).
 """
 
-from typing import TYPE_CHECKING, Any
-
-import ch_timedisc as ch
+import sys
+import os
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Literal, Optional
 from dolfinx.fem.petsc import NonlinearProblem
 
+
 if TYPE_CHECKING:
-    from ch_timedisc.energy import Energy
-    from ch_timedisc.fem import FEMHandler
-    from ch_timedisc.parameters import Parameters
-    from ch_timedisc.variational_forms import VariationalForm
+    from ch_timedisc import VariationalForm
+    from ch_timedisc import Parameters
+    from ch_timedisc import FEMHandler
 
 
-class AdaptiveTimeStep:
-    """Adaptive time step controller for Cahn-Hilliard simulations.
+class AdaptiveTimeStep(ABC):
+    """Abstract base class for adaptive time step controllers.
 
-    This class implements an adaptive time stepping strategy that adjusts the
-    time step size based on the squared gradient of the chemical potential.
-    The time step is increased when the solution is smooth (small gradients)
-    and decreased when sharp features develop (large gradients).
+    This class defines the interface for adaptive time stepping strategies
+    that adjust the time step size based on problem-specific criteria.
+    Different concrete implementations can implement different adaptation
+    strategies (e.g., energy-based, gradient-based, error-based).
 
-    The adaptation strategy:
-    - Doubles dt if dt * ||∇μ||² < 10 (smooth solution, can take larger steps)
-    - Halves dt if dt * ||∇μ||² > 100 (sharp features, need smaller steps)
-    - Keeps dt unchanged if 10 ≤ dt * ||∇μ||² ≤ 100
+    Subclasses must implement the `criterion()` method that returns whether
+    to "increase", "decrease", or "keep" the time step based on the current
+    solution state.
 
     Parameters
     ----------
-    energy : ch.Energy
-        Energy object that computes energy-related quantities including
-        dt_gradmusquared() which returns dt * ||∇μ||².
-    parameters : ch.Parameters
-        Parameters object containing simulation parameters including the
-        time step size (dt) which will be modified by this controller.
-    verbose : bool, optional
-        If True, prints the updated time step size after each adaptation.
-        Default is False.
+    factor : float
+        Factor to multiply/divide time step by.
+        - Increase: dt = dt * factor
+        - Decrease: dt = dt / factor
+    variational_form : VariationalForm
+        Variational form that needs updating when dt changes.
+    parameters : Parameters
+        Simulation parameters containing dt and other settings.
+    femhandler : FEMHandler
+        Finite element handler with solution variables.
+    threshold_increase : float
+        Lower threshold for the adaptation criterion. When criterion value
+        is below this, time step will increase.
+    threshold_decrease : float
+        Upper threshold for the adaptation criterion. When criterion value
+        exceeds this, time step will decrease.
+    verbose : bool
+        If True, prints time step updates.
 
     Attributes
     ----------
-    energy : ch.Energy
-        Reference to the energy object.
-    parameters : ch.Parameters
+    factor : float
+        Multiplicative factor for time step adaptation.
+    variational_form : VariationalForm
+        Reference to the variational form object.
+    parameters : Parameters
         Reference to the parameters object.
+    femhandler : FEMHandler
+        Reference to the FEM handler.
+    threshold_increase : float
+        Lower threshold for criterion-based dt increases.
+    threshold_decrease : float
+        Upper threshold for criterion-based dt decreases.
     verbose : bool
-        Verbosity flag for printing time step updates.
-
-    Examples
-    --------
-    >>> import ch_timedisc as ch
-    >>> # Setup simulation components
-    >>> parameters = ch.Parameters(dt=0.01)
-    >>> energy = ch.Energy(...)  # Initialize with appropriate arguments
-    >>> adaptive_dt = ch.AdaptiveTimeStep(energy, parameters, verbose=True)
-    >>>
-    >>> # In time stepping loop
-    >>> for step in range(num_steps):
-    >>>     # Solve the system
-    >>>     solver.solve()
-    >>>     # Adapt time step based on solution characteristics
-    >>>     adaptive_dt()
-
-    Notes
-    -----
-    The threshold values (10 and 100) are heuristic and may need adjustment
-    based on the specific problem characteristics and desired accuracy.
+        Verbosity flag for printing updates.
     """
 
     def __init__(
         self,
-        energy: "Energy",
-        femhandler: "FEMHandler",
-        parameters: "Parameters",
         variational_form: "VariationalForm",
-        verbose: bool = False,
+        parameters: "Parameters",
+        femhandler: "FEMHandler",
+        verbose: bool,
     ) -> None:
         """Initialize the adaptive time step controller.
 
         Args:
-            energy: Energy object that computes energy-related quantities.
+            factor: Factor to multiply/divide dt by during adaptation.
+            variational_form: Variational form to update when dt changes.
+            parameters: Simulation parameters containing dt.
             femhandler: Finite element handler with solution variables.
-            parameters: Parameters object containing simulation parameters.
-            variational_form: Variational form object for updating the problem.
-            verbose: Enable printing of time step updates. Defaults to False.
+            threshold_increase: Lower threshold for criterion-based dt increases.
+            threshold_decrease: Upper threshold for criterion-based dt decreases.
+            verbose: If True, prints update information.
         """
-        self.verbose: bool = verbose
-        self.energy: "Energy" = energy
-        self.parameters: "Parameters" = parameters
-        self.femhandler: "FEMHandler" = femhandler
-        self.variational_form: "VariationalForm" = variational_form
 
-    def __call__(self) -> NonlinearProblem:
-        """Adapt the time step based on the current solution state.
+        self.factor = parameters.adaptive_factor
+        self.verbose = verbose
+        self.variational_form = variational_form
+        self.parameters = parameters
+        self.femhandler = femhandler
+        self.threshold_increase: float = parameters.adaptive_threshold_increase
+        self.threshold_decrease: float = parameters.adaptive_threshold_decrease
 
-        Evaluates dt * ||∇μ||² and adjusts the time step size accordingly:
-        - If < 10: doubles the time step (solution is smooth)
-        - If > 100: halves the time step (sharp features present)
-        - Otherwise: keeps the time step unchanged
+    @abstractmethod
+    def criterion(self) -> Literal["decrease", "increase", "keep"]:
+        """Evaluate the adaptation criterion based on the current solution state.
 
-        The time step size in self.parameters.dt is modified in-place.
+        This method must be implemented by concrete subclasses to determine
+        whether to increase, decrease, or keep the time step size.
 
         Returns:
-            Updated nonlinear problem for the next time step.
-
-        Notes
-        -----
-        This method should be called after each successful time step to
-        evaluate whether the time step should be adjusted for the next step.
+            "increase": Increase the time step
+            "decrease": Decrease the time step
+            "keep": Keep the time step unchanged
         """
-        dt_grad_mu_sq = self.energy.dt_gradmusquared()
+        pass
 
-        if dt_grad_mu_sq < 10:
-            self.parameters.dt *= 2
-            problem = self.update_problem()
-        # elif dt_grad_mu_sq > 100:
-        #     self.parameters.dt *= 0.5
-        #     problem = self.update_problem()
-        else:
-            problem = self.update_problem()
-        if self.verbose:
-            print(f"Time step size is: {self.parameters.dt}")
+    def update_dt(
+        self, state: str, time_step: Optional[int] = None
+    ) -> NonlinearProblem:
+        """Update the time step size and recreate the nonlinear problem.
 
-        return problem
+        This method modifies parameters.dt based on the state, updates the
+        variational form with the new dt, and creates a new NonlinearProblem
+        with the updated form.
 
-    def update_problem(self) -> NonlinearProblem:
-        """Update the nonlinear problem with the current parameters.
+        Args:
+            state: Either "increase" or "decrease" to modify dt.
+            time_step: Current time step number for verbose output.
 
         Returns:
-            Updated nonlinear problem with the current time step.
+            Updated NonlinearProblem with the new time step size.
         """
-        self.variational_form.update(self.parameters)
 
-        # Set up nonlinear problem
-        problem = NonlinearProblem(
-            self.variational_form.F,
-            self.femhandler.xi,
-            petsc_options_prefix="ch_implicit_",
-            petsc_options=self.parameters.petsc_options,
-        )
+        if state == "decrease":
+            self.parameters.dt /= self.factor
+
+        elif state == "increase":
+            self.parameters.dt *= self.factor
+
+        if self.verbose and time_step is not None:
+            print(
+                f"Updated time step size at time step {time_step} is dt = {self.parameters.dt}"
+            )
+
+        self.variational_form.update()
+
+        # Suppress linker warnings during JIT compilation
+        # Save original stderr
+        original_stderr = sys.stderr
+        try:
+            # Redirect stderr to devnull to suppress ld warnings
+            sys.stderr = open(os.devnull, "w")
+            problem: NonlinearProblem = NonlinearProblem(
+                self.variational_form.F,
+                self.femhandler.xi,
+                petsc_options_prefix="ch_",
+                petsc_options=self.parameters.petsc_options,
+            )
+        finally:
+            # Restore stderr
+            if sys.stderr != original_stderr:
+                sys.stderr.close()
+            sys.stderr = original_stderr
 
         return problem
