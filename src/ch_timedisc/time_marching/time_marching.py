@@ -119,7 +119,6 @@ class TimeMarching:
                 print(f"Used {n} newton iterations to converge at time step {i}.")
 
             if self.adaptive_time_step is not None:
-
                 while self.adaptive_time_step.criterion() == "decrease":
                     self.problem = self.adaptive_time_step.update_dt("decrease", i)
                     n, converged = self.problem.solve()

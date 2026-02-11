@@ -155,7 +155,8 @@ class AdaptiveTimeStep(ABC):
             )
         finally:
             # Restore stderr
-            sys.stderr.close() if sys.stderr != original_stderr else None
+            if sys.stderr != original_stderr:
+                sys.stderr.close()
             sys.stderr = original_stderr
 
         return problem
