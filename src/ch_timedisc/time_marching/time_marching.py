@@ -2,6 +2,8 @@
 
 from typing import TYPE_CHECKING, List, Optional, Union
 from tqdm import tqdm
+from pathlib import Path
+import numpy as np
 
 
 if TYPE_CHECKING:
@@ -47,6 +49,7 @@ class TimeMarching:
         verbose: bool = False,
         viz: Optional[Union["PyvistaVizualization", "PyvistaVizualization3D"]] = None,
         output_file: Optional["XDMFFile"] = None,
+        numpy_output_dir: Optional[Union[str, Path]] = None,
     ) -> None:
         """Initialize the time marching controller.
 
@@ -59,6 +62,7 @@ class TimeMarching:
             verbose: Print convergence info. Defaults to False.
             viz: Visualization object for updates. Defaults to None (no visualization).
             output_file: Output file handler for saving results. Defaults to None.
+            numpy_output_dir: Directory to save numpy arrays of solutions. Defaults to None.
         """
         self.femhandler: "FEMHandler" = femhandler
         self.parameters: "Parameters" = parameters
@@ -71,6 +75,13 @@ class TimeMarching:
         )
         self.time_vec: List[float] = []
         self.output_file: Optional["XDMFFile"] = output_file
+        self.numpy_output_dir: Optional[Path] = (
+            Path(numpy_output_dir) if numpy_output_dir is not None else None
+        )
+
+        # Storage for numpy arrays at output times
+        self.solution_arrays: dict = {}  # {time: pf_array}
+        self.mu_arrays: dict = {}  # {time: mu_array}
 
     def __call__(self) -> List[float]:
         """Execute the time stepping loop and return time vector.
@@ -91,9 +102,32 @@ class TimeMarching:
 
         i = 0
 
+        # Track which output times have been written
+        output_times_written = set()
+
+        # Write initial condition if output_file exists and either no output_times specified
+        # or t0 is in the output_times list
         if self.output_file is not None:
-            pf_out, _ = self.femhandler.xi.split()
-            self.output_file.write_function(pf_out, t)
+            if self.parameters.output_times is None:
+                # Write at every step (original behavior)
+                pf_out, _ = self.femhandler.xi.split()
+                self.output_file.write_function(pf_out, t)
+            elif any(
+                abs(t - output_t) < 1e-10 for output_t in self.parameters.output_times
+            ):
+                # Write initial condition if it's in output_times
+                pf_out, _ = self.femhandler.xi.split()
+                self.output_file.write_function(pf_out, t)
+                output_times_written.add(t)
+
+        # Save initial condition as numpy array if requested
+        if self.numpy_output_dir is not None:
+            if self.parameters.output_times is None or any(
+                abs(t - output_t) < 1e-10 for output_t in self.parameters.output_times
+            ):
+                pf_out, mu_out = self.femhandler.xi.split()
+                self.solution_arrays[t] = pf_out.x.array[:].copy()
+                self.mu_arrays[t] = mu_out.x.array[:].copy()
 
         # Initialize progress bar if verbose
         if self.verbose:
@@ -119,7 +153,7 @@ class TimeMarching:
                 print(f"WARNING: Newton solver did not converge at time step {i}")
 
             if self.verbose and not self.adaptive_time_step:
-                print(f"Used {n} newton iterations to converge at time step {i}.")
+                print(f"Used {n} Newton iterations to converge at time step {i}.")
 
             if self.adaptive_time_step is not None:
                 while self.adaptive_time_step.criterion() == "decrease":
@@ -152,12 +186,79 @@ class TimeMarching:
             if self.viz is not None:
                 self.viz.update(self.femhandler.xi.sub(0), t)
 
+            # Write output at predetermined times or every step
             if self.output_file is not None:
-                pf_out, _ = self.femhandler.xi.split()
-                self.output_file.write_function(pf_out, t)
+                if self.parameters.output_times is None:
+                    # Write at every time step (original behavior)
+                    pf_out, _ = self.femhandler.xi.split()
+                    self.output_file.write_function(pf_out, t)
+                else:
+                    # Check if current time crosses any output checkpoint
+                    for output_time in self.parameters.output_times:
+                        # Check if this time hasn't been written yet and current time crosses it
+                        if (
+                            output_time not in output_times_written
+                            and t - self.parameters.dt < output_time <= t + 1e-10
+                        ):
+                            pf_out, _ = self.femhandler.xi.split()
+                            self.output_file.write_function(pf_out, output_time)
+                            output_times_written.add(output_time)
+                            break  # Only write once per checkpoint
+
+            # Save numpy arrays at predetermined times
+            if self.numpy_output_dir is not None:
+                if self.parameters.output_times is None:
+                    # Save at every time step
+                    pf_out, mu_out = self.femhandler.xi.split()
+                    self.solution_arrays[t] = pf_out.x.array[:].copy()
+                    self.mu_arrays[t] = mu_out.x.array[:].copy()
+                else:
+                    # Check if current time crosses any output checkpoint
+                    for output_time in self.parameters.output_times:
+                        if (
+                            output_time not in output_times_written
+                            and t - self.parameters.dt < output_time <= t + 1e-10
+                        ):
+                            pf_out, mu_out = self.femhandler.xi.split()
+                            self.solution_arrays[output_time] = pf_out.x.array[:].copy()
+                            self.mu_arrays[output_time] = mu_out.x.array[:].copy()
+                            break
 
         # Close progress bar
         if self.verbose:
             pbar.close()
 
+        # Save numpy arrays to file if requested
+        if self.numpy_output_dir is not None and len(self.solution_arrays) > 0:
+            self._save_numpy_arrays()
+
         return self.time_vec
+
+    def _save_numpy_arrays(self) -> None:
+        """Save collected solution arrays to numpy .npz file."""
+        if self.numpy_output_dir is None:
+            return
+
+        # Create output directory if it doesn't exist
+        self.numpy_output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Prepare data for saving
+        times = sorted(self.solution_arrays.keys())
+        pf_arrays = [self.solution_arrays[t] for t in times]
+        mu_arrays = [self.mu_arrays[t] for t in times]
+
+        # Save to .npz file
+        output_file = self.numpy_output_dir / "solution_arrays.npz"
+        np.savez(
+            output_file,
+            times=np.array(times),
+            pf=np.array(pf_arrays),
+            mu=np.array(mu_arrays),
+            dt=self.parameters.dt,
+            T=self.parameters.T,
+            nx=self.parameters.nx,
+            ny=self.parameters.ny,
+        )
+
+        if self.verbose:
+            print(f"\nSaved {len(times)} solution snapshots to {output_file}")

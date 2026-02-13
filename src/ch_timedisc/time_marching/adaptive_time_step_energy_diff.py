@@ -95,7 +95,7 @@ class AdaptiveTimeStepEnergyDiff(AdaptiveTimeStep):
 
         if (
             energy_diff < self.threshold_decrease
-            or self.energy.energy() - self.energy.energy_vec[-1] > 0
+            or self.energy.energy() - self.energy.energy_vec[-1] > 1e-8
         ):
             return "decrease"
         elif energy_diff > self.threshold_increase:

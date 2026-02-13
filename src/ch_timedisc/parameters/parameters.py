@@ -33,6 +33,7 @@ class Parameters:
         tol: float = 1.0e-6,
         max_iter: int = 200,
         t0: float = 0,
+        output_times: Optional[list] = None,
     ) -> None:
         """
         Initialize simulation parameters with sensible defaults.
@@ -50,6 +51,7 @@ class Parameters:
             tol: Nonlinear solver tolerance. Default: 1.0e-6
             max_iter: Maximum nonlinear solver iterations. Default: 200
             t0: Initial time. Default: 0
+            output_times: List of times at which to save solution. If None, saves at every time step. Default: None
 
         Raises:
             ValueError: If both T and num_time_steps are provided.
@@ -97,6 +99,9 @@ class Parameters:
         # Nonlinear iteration parameters
         self.tol: float = tol
         self.max_iter: int = max_iter
+
+        # Output control
+        self.output_times: Optional[list] = output_times
 
         # Determine linear solver based on available PETSc packages
         sys = PETSc.Sys()  # type: ignore
@@ -167,6 +172,7 @@ class Parameters:
             "tol": self.tol,
             "max_iter": self.max_iter,
             "t0": self.t0,
+            "output_times": self.output_times,
         }
 
         with open(json_path, "w") as f:
